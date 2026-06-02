@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "284178054766",
+    "project_id": "auth-module-da32b",
+    "storage_bucket": "auth-module-da32b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:284178054766:android:990ee4ac69341ff81bf07f",
+        "android_client_info": {
+          "package_name": "com.example.auth_model"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCAJ5CXlVOTzvm3P9huUrvF8NTIWOBWE8A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
