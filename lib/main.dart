@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 // Kalau nama project-mu opportulink, berarti seperti ini:
 // import 'package:opportulink/features/home/presentation/screens/main_screen.dart';
 import 'features/home/main_screen.dart';
+import 'features/Opportunities/opportunities_screen.dart';
 
 void main() {
   // Kalau nanti ada inisialisasi Firebase, taruhnya di sini sebelum runApp

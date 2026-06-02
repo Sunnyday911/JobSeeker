@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart'; // Import file home kamu nanti
+import 'package:jobseeker/features/opportunities/opportunities_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -14,7 +15,7 @@ class _MainScreenState extends State<MainScreen> {
   // Nanti index 1, 2, 3, 4 diganti dengan file dari branch temen-temenmu
   final List<Widget> _pages = [
     const HomeScreen(),
-    const Center(child: Text('Opportunities Screen (Coming Soon)')),
+    const OpportunitiesScreen(),
     const Center(child: Text('Events Screen (Coming Soon)')),
     const Center(child: Text('Applications Screen (Coming Soon)')),
     const Center(child: Text('Profile Screen (Branch Muiz)')),
