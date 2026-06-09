@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../models/question.dart';
-import '../forum/forum_provider.dart';
+import 'package:jobseeker/features/models/question.dart';
+import 'package:jobseeker/features/models/reply.dart';
+import 'package:jobseeker/features/forum/forum_provider.dart';
 
 class PostQuestionScreen extends StatefulWidget {
   const PostQuestionScreen({super.key});

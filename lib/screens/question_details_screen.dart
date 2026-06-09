@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../models/question.dart';
-import '../models/reply.dart';
-import '../forum/forum_provider.dart';
-import '../repositories/forum_repository.dart';
-import '../widgets/reply_card.dart';
+import 'package:jobseeker/features/models/question.dart';
+import 'package:jobseeker/features/models/reply.dart';
+import 'package:jobseeker/features/forum/forum_provider.dart';
+import 'package:jobseeker/features/repositories/forum_repository.dart';
+import 'package:jobseeker/features/widgets/reply_card.dart';
 
 class QuestionDetailsScreen extends StatefulWidget {
   final Question question;

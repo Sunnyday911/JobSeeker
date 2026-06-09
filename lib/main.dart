@@ -8,11 +8,11 @@ import 'package:jobseeker/features/repositories/forum_repository.dart';
 import 'package:jobseeker/features/forum/forum_provider.dart';
 
 // Screen imports
-import 'package:jobseeker/features/forum/home.dart';
-import 'package:jobseeker/features/screens/login_screen.dart';
-import 'package:jobseeker/features/screens/register_screen.dart';
-import 'package:jobseeker/features/screens/forum_feed_screen.dart';
-import 'package:jobseeker/features/screens/post_question_screen.dart';
+import 'package:jobseeker/features/home/home_screen.dart';
+import 'package:jobseeker/screens/login_screen.dart';
+import 'package:jobseeker/screens/register_screen.dart';
+import 'package:jobseeker/screens/forum_feed_screen.dart';
+import 'package:jobseeker/screens/post_question_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
