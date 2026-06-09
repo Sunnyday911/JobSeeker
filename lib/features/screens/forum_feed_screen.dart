@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/question.dart';
-import '../widgets/question_card.dart';
-import '../forum/forum_provider.dart';
+import 'package:jobseeker/features/models/question.dart';
+import 'package:jobseeker/features/widgets/question_card.dart';
+import 'package:jobseeker/features/forum/forum_provider.dart';
 import 'question_details_screen.dart';
 
 class ForumFeedScreen extends StatefulWidget {

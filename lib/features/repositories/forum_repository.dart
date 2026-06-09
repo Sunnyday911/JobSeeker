@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/question.dart';
-import '../models/reply.dart';
+import 'package:jobseeker/features/models/question.dart';
+import 'package:jobseeker/features/models/reply.dart';
 
 class ForumRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;

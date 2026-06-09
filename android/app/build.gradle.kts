@@ -1,4 +1,4 @@
-dplugins {
+plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
     id("com.google.gms.google-services")

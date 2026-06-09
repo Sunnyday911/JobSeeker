@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../models/question.dart';
-import '../models/reply.dart';
-import '../repositories/forum_repository.dart';
+import 'package:jobseeker/features/models/question.dart';
+import 'package:jobseeker/features/models/reply.dart';
+import 'package:jobseeker/features/repositories/forum_repository.dart';
 
 class ForumProvider with ChangeNotifier {
   final ForumRepository _repository;
