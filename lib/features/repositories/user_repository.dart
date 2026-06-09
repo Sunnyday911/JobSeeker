@@ -1,0 +1,56 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:jobseeker/features/models/app_user.dart';
+
+/// Reads and writes the `users/{uid}` profile document.
+class UserRepository {
+  final _db = FirebaseFirestore.instance;
+  final _auth = FirebaseAuth.instance;
+
+  DocumentReference<Map<String, dynamic>> _doc(String uid) =>
+      _db.collection('users').doc(uid);
+
+  /// Creates the initial profile on registration (US01). New users start as
+  /// 'user' with onboarding pending.
+  Future<void> createProfile(String uid, String email) async {
+    await _doc(uid).set({
+      'email': email,
+      'role': 'user',
+      'industry': null,
+      'experienceLevel': null,
+      'onboardingCompleted': false,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// One-shot read of the current user's profile, or null if missing.
+  Future<AppUser?> getCurrentProfile() async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return null;
+    final snap = await _doc(uid).get();
+    if (!snap.exists) return null;
+    return AppUser.fromFirestore(snap);
+  }
+
+  /// Live stream of the current user's profile.
+  Stream<AppUser?> watchCurrentProfile() {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return Stream.value(null);
+    return _doc(uid).snapshots().map(
+          (snap) => snap.exists ? AppUser.fromFirestore(snap) : null,
+        );
+  }
+
+  /// Saves onboarding choices and marks onboarding complete (US03.4).
+  Future<void> completeOnboarding({
+    required String industry,
+    required String experienceLevel,
+  }) async {
+    final uid = _auth.currentUser!.uid;
+    await _doc(uid).update({
+      'industry': industry,
+      'experienceLevel': experienceLevel,
+      'onboardingCompleted': true,
+    });
+  }
+}

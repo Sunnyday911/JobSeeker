@@ -8,7 +8,7 @@ import 'package:jobseeker/features/repositories/forum_repository.dart';
 import 'package:jobseeker/features/forum/forum_provider.dart';
 
 // Screen imports
-import 'package:jobseeker/features/home/home_screen.dart';
+import 'package:jobseeker/features/home/main_screen.dart';
 import 'package:jobseeker/screens/login_screen.dart';
 import 'package:jobseeker/screens/register_screen.dart';
 import 'package:jobseeker/screens/forum_feed_screen.dart';
@@ -49,7 +49,7 @@ class MyApp extends StatelessWidget {
         colorSchemeSeed: Colors.blue,
       ),
       routes: {
-        'home': (context) => const HomeScreen(),
+        'home': (context) => const MainScreen(),
         'login': (context) => const LoginScreen(),
         'register': (context) => const RegisterScreen(),
         'forum': (context) => const ForumFeedScreen(),

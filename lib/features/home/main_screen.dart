@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart'; // Import file home kamu nanti
-import 'package:jobseeker/features/opportunities/opportunities_screen.dart';
+import 'package:jobseeker/features/articles/articles_feed_screen.dart';
+import 'package:jobseeker/features/bookmarks/bookmarks_screen.dart';
+import 'package:jobseeker/features/profile/profile_screen.dart';
 
+/// CareerCompass shell: Home (articles + news) / Bookmarks / Profile.
 class MainScreen extends StatefulWidget {
-  const MainScreen({Key? key}) : super(key: key);
+  const MainScreen({super.key});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -12,35 +14,27 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
-  // Nanti index 1, 2, 3, 4 diganti dengan file dari branch temen-temenmu
-  final List<Widget> _pages = [
-    const HomeScreen(),
-    const OpportunitiesScreen(),
-    const Center(child: Text('Events Screen (Coming Soon)')),
-    const Center(child: Text('Applications Screen (Coming Soon)')),
-    const Center(child: Text('Profile Screen (Branch Muiz)')),
+  late final List<Widget> _pages = [
+    const ArticlesFeedScreen(),
+    BookmarksScreen(),
+    const ProfileScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_currentIndex],
+      body: IndexedStack(index: _currentIndex, children: _pages),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+        onTap: (index) => setState(() => _currentIndex = index),
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Colors.blueAccent,
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Opportunities'),
-          BottomNavigationBarItem(icon: Icon(Icons.event), label: 'Events'),
-          BottomNavigationBarItem(icon: Icon(Icons.description), label: 'Applications'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.bookmark), label: 'Tersimpan'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
         ],
       ),
     );
