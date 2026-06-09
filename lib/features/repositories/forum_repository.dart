@@ -1,57 +1,115 @@
-Stream<List<Question>> getQuestions() {
-  return FirebaseFirestore.instance
-      .collection('questions')
-      .orderBy('createdAt', descending: true)
-      .limit(20)
-      .snapshots()
-      .map((snapshot) =>
-      snapshot.docs.map(Question.fromFirestore).toList());
-}
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/question.dart';
+import '../models/reply.dart';
 
-Future<void> createQuestion({
-  required String title,
-  required String content,
-  required String category,
-  required bool anonymous,
-}) async {
-  final user = FirebaseAuth.instance.currentUser!;
+class ForumRepository {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  await FirebaseFirestore.instance
-      .collection('questions')
-      .add({
-    'title': title,
-    'content': content,
-    'category': category,
-    'authorId': user.uid,
-    'authorName': user.displayName ?? 'User',
-    'isAnonymous': anonymous,
-    'upvotes': 0,
-    'replyCount': 0,
-    'createdAt': FieldValue.serverTimestamp(),
-  });
-}
+  // Questions Collection
+  CollectionReference<Map<String, dynamic>> get _questionsCollection =>
+      _firestore.collection('questions');
 
-Future<void> addReply({
-  required String questionId,
-  required String content,
-}) async {
+  // Stream of latest 20 questions
+  Stream<List<Question>> getQuestions() {
+    return _questionsCollection
+        .orderBy('createdAt', descending: true)
+        .limit(20)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) => Question.fromFirestore(doc)).toList();
+    });
+  }
 
-  final user = FirebaseAuth.instance.currentUser!;
+  // Create a new question
+  Future<void> createQuestion(Question question) async {
+    try {
+      await _questionsCollection.add(question.toJson());
+    } catch (e) {
+      throw Exception('Failed to create question: $e');
+    }
+  }
 
-  final questionRef = FirebaseFirestore.instance
-      .collection('questions')
-      .doc(questionId);
+  // Update a question
+  Future<void> updateQuestion(String questionId, Map<String, dynamic> data) async {
+    try {
+      await _questionsCollection.doc(questionId).update(data);
+    } catch (e) {
+      throw Exception('Failed to update question: $e');
+    }
+  }
 
-  await questionRef
-      .collection('replies')
-      .add({
-    'content': content,
-    'authorId': user.uid,
-    'authorName': user.displayName,
-    'createdAt': FieldValue.serverTimestamp(),
-  });
+  // Delete a question
+  Future<void> deleteQuestion(String questionId) async {
+    try {
+      await _questionsCollection.doc(questionId).delete();
+    } catch (e) {
+      throw Exception('Failed to delete question: $e');
+    }
+  }
 
-  await questionRef.update({
-    'replyCount': FieldValue.increment(1),
-  });
+  // Stream of replies for a specific question
+  Stream<List<Reply>> getReplies(String questionId) {
+    return _questionsCollection
+        .doc(questionId)
+        .collection('replies')
+        .orderBy('createdAt', descending: false)
+        .limit(20)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) => Reply.fromFirestore(doc)).toList();
+    });
+  }
+
+  // Add a reply and increment replyCount
+  Future<void> addReply(String questionId, Reply reply) async {
+    try {
+      final questionRef = _questionsCollection.doc(questionId);
+      final replyRef = questionRef.collection('replies').doc();
+
+      await _firestore.runTransaction((transaction) async {
+        transaction.set(replyRef, reply.toJson());
+        transaction.update(questionRef, {
+          'replyCount': FieldValue.increment(1),
+        });
+      });
+    } catch (e) {
+      throw Exception('Failed to add reply: $e');
+    }
+  }
+
+  // Delete a reply and decrement replyCount
+  Future<void> deleteReply(String questionId, String replyId) async {
+    try {
+      final questionRef = _questionsCollection.doc(questionId);
+      final replyRef = questionRef.collection('replies').doc(replyId);
+
+      await _firestore.runTransaction((transaction) async {
+        transaction.delete(replyRef);
+        transaction.update(questionRef, {
+          'replyCount': FieldValue.increment(-1),
+        });
+      });
+    } catch (e) {
+      throw Exception('Failed to delete reply: $e');
+    }
+  }
+
+  // Upvote a question using a transaction
+  Future<void> upvoteQuestion(String questionId) async {
+    try {
+      final questionRef = _questionsCollection.doc(questionId);
+
+      await _firestore.runTransaction((transaction) async {
+        final snapshot = await transaction.get(questionRef);
+        if (!snapshot.exists) {
+          throw Exception("Question does not exist!");
+        }
+
+        final newUpvotes = (snapshot.data()?['upvotes'] ?? 0) + 1;
+        transaction.update(questionRef, {'upvotes': newUpvotes});
+      });
+    } catch (e) {
+      throw Exception('Failed to upvote question: $e');
+    }
+  }
 }
