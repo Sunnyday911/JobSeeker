@@ -1,57 +1,59 @@
 import 'package:flutter/material.dart';
-
-// --- Import dari branch epic-alfa (Auth) ---
 import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
-import 'package:auth_modul/screens/home.dart';
-import 'package:auth_modul/screens/login.dart';
-import 'package:auth_modul/screens/register.dart';
 
-// --- Import dari branch kamu (UI Shell) ---
-import 'features/home/main_screen.dart';
-import 'features/Opportunities/opportunities_screen.dart';
+// Forum feature imports
+import 'package:jobseeker/features/repositories/forum_repository.dart';
+import 'package:jobseeker/features/forum/forum_provider.dart';
+
+// Screen imports
+import 'package:jobseeker/features/home/home_screen.dart';
+import 'package:jobseeker/screens/login_screen.dart';
+import 'package:jobseeker/screens/register_screen.dart';
+import 'package:jobseeker/screens/forum_feed_screen.dart';
+import 'package:jobseeker/screens/post_question_screen.dart';
 
 void main() async {
-  // 1. Mempertahankan inisialisasi Firebase dari branch epic-alfa
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // 2. Menjalankan class aplikasi utama kita
-  runApp(const OpportuLinkApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        Provider(create: (_) => ForumRepository()),
+        ChangeNotifierProvider(
+          create: (context) => ForumProvider(
+            context.read<ForumRepository>(),
+          ),
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
-class OpportuLinkApp extends StatelessWidget {
-  const OpportuLinkApp({Key? key}) : super(key: key);
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'OpportuLink',
+      title: 'Career Discussion Forum',
+      initialRoute: 'login',
       debugShowCheckedModeBanner: false,
-      
-      // 3. Mempertahankan Tema Desain dari branch main
       theme: ThemeData(
-        primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: Colors.grey[50], 
-        fontFamily: 'Roboto', 
-        appBarTheme: const AppBarTheme(
-          elevation: 0,
-          backgroundColor: Colors.white,
-          iconTheme: IconThemeData(color: Colors.black),
-        ),
+        useMaterial3: true,
+        colorSchemeSeed: Colors.blue,
       ),
-      
-      // 4. Menggabungkan sistem Routing dari branch epic-alfa
-      // Aplikasi akan dibuka pertama kali di halaman Login
-      initialRoute: 'login', 
       routes: {
+        'home': (context) => const HomeScreen(),
         'login': (context) => const LoginScreen(),
         'register': (context) => const RegisterScreen(),
-        // PENTING: Arahkan rute 'home' ke MainScreen (Bottom Nav Bar) buatanmu,
-        // supaya setelah login sukses, user masuk ke dashboard utama OpportuLink.
-        'home': (context) => const MainScreen(), 
+        'forum': (context) => const ForumFeedScreen(),
+        'post_question': (context) => const PostQuestionScreen(),
       },
     );
   }
