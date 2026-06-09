@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "360794027054",
-    "project_id": "final-project-67020",
-    "storage_bucket": "final-project-67020.firebasestorage.app"
+    "project_number": "284178054766",
+    "project_id": "auth-module-da32b",
+    "storage_bucket": "auth-module-da32b.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:360794027054:android:446bd6e6bda0e127f41bbf",
+        "mobilesdk_app_id": "1:284178054766:android:990ee4ac69341ff81bf07f",
         "android_client_info": {
-          "package_name": "com.example.jobseeker"
+          "package_name": "com.example.auth_model"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBYsLVr4pfd2ezcn7u0hjWuyx-sSdiOwAE"
+          "current_key": "AIzaSyCAJ5CXlVOTzvm3P9huUrvF8NTIWOBWE8A"
         }
       ],
       "services": {
