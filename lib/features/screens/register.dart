@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:jobseeker/features/repositories/user_repository.dart';
+import 'package:jobseeker/features/screens/auth_messages.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -9,91 +11,123 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _userRepo = UserRepository();
 
   bool _isLoading = false;
-  String _errorCode = "";
+  String _error = '';
 
-  void navigateLogin() {
-    if (!context.mounted) return;
-    Navigator.pushReplacementNamed(context, 'login');
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
-  void navigateHome() {
-    if (!context.mounted) return;
-    Navigator.pushReplacementNamed(context, 'home');
-  }
+  Future<void> register() async {
+    if (!_formKey.currentState!.validate()) return;
 
-  void register() async {
     setState(() {
       _isLoading = true;
-      _errorCode = "";
+      _error = '';
     });
 
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text,
+      final email = _emailController.text.trim();
+      final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
         password: _passwordController.text,
       );
-      navigateLogin();
+      // Create the Firestore profile while the new user is authenticated, then
+      // sign back out so they explicitly log in (US01.3).
+      await _userRepo.createProfile(cred.user!.uid, email);
+      await FirebaseAuth.instance.signOut();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Registrasi berhasil! Silakan login.')),
+      );
+      Navigator.pop(context); // back to Login
     } on FirebaseAuthException catch (e) {
-      setState(() {
-        _errorCode = e.code;
-      });
+      setState(() => _error = authErrorMessage(e.code));
+    } catch (_) {
+      setState(() => _error = 'Terjadi kesalahan. Coba lagi.');
     }
 
-    setState(() {
-      _isLoading = false;
-    });
+    if (mounted) setState(() => _isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Register'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Register'), centerTitle: true),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Center(
+        child: Form(
+          key: _formKey,
           child: ListView(
             children: [
               const SizedBox(height: 48),
-              Icon(Icons.lock_outline, size: 100, color: Colors.blue[200]),
-              const SizedBox(height: 48),
-              TextField(
-                controller: _emailController,
-                decoration: const InputDecoration(label: Text('Email')),
+              Icon(Icons.explore_outlined, size: 90, color: Colors.blue[300]),
+              const SizedBox(height: 16),
+              const Text(
+                'Buat Akun CareerCompass',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
-              TextField(
+              const SizedBox(height: 32),
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
+                ),
+                validator: validateEmail,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
                 controller: _passwordController,
                 obscureText: true,
-                decoration: const InputDecoration(label: Text('Password')),
+                decoration: const InputDecoration(
+                  labelText: 'Password',
+                  helperText: 'Minimal 8 karakter',
+                  border: OutlineInputBorder(),
+                ),
+                validator: validatePassword,
               ),
-              const SizedBox(height: 24),
-              _errorCode != ""
-                  ? Column(
-                children: [Text(_errorCode), const SizedBox(height: 24)],
-              )
-                  : const SizedBox(height: 0),
-              OutlinedButton(
-                onPressed: register,
+              const SizedBox(height: 16),
+              if (_error.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child:
+                      Text(_error, style: const TextStyle(color: Colors.red)),
+                ),
+              FilledButton(
+                onPressed: _isLoading ? null : register,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                ),
                 child: _isLoading
-                    ? const CircularProgressIndicator()
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : const Text('Register'),
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('Already have an account?'),
+                  const Text('Sudah punya akun?'),
                   TextButton(
-                    onPressed: navigateLogin,
+                    onPressed: () => Navigator.pop(context),
                     child: const Text('Login'),
-                  )
+                  ),
                 ],
-              )
+              ),
             ],
           ),
         ),

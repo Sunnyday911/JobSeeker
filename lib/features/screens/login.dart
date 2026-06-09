@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:jobseeker/features/screens/auth_messages.dart';
+import 'package:jobseeker/features/screens/register.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -9,90 +11,121 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
   bool _isLoading = false;
-  String _errorCode = "";
+  String _error = '';
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   void navigateRegister() {
-    if (!context.mounted) return;
-    Navigator.pushReplacementNamed(context, 'register');
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const RegisterScreen()),
+    );
   }
 
-  void navigateHome() {
-    if (!context.mounted) return;
-    Navigator.pushReplacementNamed(context, 'home');
-  }
+  Future<void> signIn() async {
+    if (!_formKey.currentState!.validate()) return;
 
-  void signIn() async {
     setState(() {
       _isLoading = true;
-      _errorCode = "";
+      _error = '';
     });
 
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text,
+        email: _emailController.text.trim(),
         password: _passwordController.text,
       );
-      navigateHome();
+      // AuthGate (the app's home) routes to onboarding or the dashboard once
+      // the auth state updates, so no manual navigation is needed here.
     } on FirebaseAuthException catch (e) {
-      setState(() {
-        _errorCode = e.code;
-      });
+      setState(() => _error = authErrorMessage(e.code));
+    } catch (_) {
+      setState(() => _error = 'Terjadi kesalahan. Coba lagi.');
     }
 
-    setState(() {
-      _isLoading = false;
-    });
+    if (mounted) setState(() => _isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Login'), centerTitle: true),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Center(
+        child: Form(
+          key: _formKey,
           child: ListView(
             children: [
               const SizedBox(height: 48),
-              Icon(Icons.lock_outline, size: 100, color: Colors.blue[200]),
-              const SizedBox(height: 48),
-              TextField(
-                controller: _emailController,
-                decoration: const InputDecoration(label: Text('Email')),
+              Icon(Icons.explore_outlined, size: 90, color: Colors.blue[300]),
+              const SizedBox(height: 16),
+              const Text(
+                'CareerCompass',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
-              TextField(
+              const SizedBox(height: 32),
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
+                ),
+                validator: validateEmail,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
                 controller: _passwordController,
                 obscureText: true,
-                decoration: const InputDecoration(label: Text('Password')),
+                decoration: const InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) => (v == null || v.isEmpty)
+                    ? 'Password tidak boleh kosong'
+                    : null,
               ),
-              const SizedBox(height: 24),
-              _errorCode != ""
-                  ? Column(
-                  children: [Text(_errorCode), const SizedBox(height: 24)])
-                  : const SizedBox(height: 0),
-              OutlinedButton(
-                onPressed: signIn,
+              const SizedBox(height: 16),
+              if (_error.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child:
+                      Text(_error, style: const TextStyle(color: Colors.red)),
+                ),
+              FilledButton(
+                onPressed: _isLoading ? null : signIn,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                ),
                 child: _isLoading
-                    ? const CircularProgressIndicator()
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : const Text('Login'),
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('Don\'t have an account?'),
+                  const Text('Belum punya akun?'),
                   TextButton(
                     onPressed: navigateRegister,
-                    child: const Text('Register'),
-                  )
+                    child: const Text('Daftar'),
+                  ),
                 ],
-              )
+              ),
             ],
           ),
         ),
