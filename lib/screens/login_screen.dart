@@ -1,5 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:jobseeker/features/notifications/notification_provider.dart';
+import 'package:jobseeker/features/notifications/notification_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -44,9 +47,10 @@ class _LoginScreenState extends State<LoginScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, 'home');
-      }
+
+      await NotificationService.instance.saveTokenToFirestore();
+
+      context.read<NotificationProvider>().initialize();
     } on FirebaseAuthException catch (e) {
       String errorMessage = "An error occurred";
       if (e.code == 'user-not-found') {
@@ -169,7 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const Text("Don't have an account?"),
                       TextButton(
                         onPressed: () {
-                          Navigator.pushReplacementNamed(context, 'register');
+                          Navigator.pushNamed(context, 'register');
                         },
                         child: const Text('Register'),
                       ),

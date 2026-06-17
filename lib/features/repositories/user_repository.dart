@@ -12,10 +12,14 @@ class UserRepository {
 
   /// Creates the initial profile on registration (US01). New users start as
   /// 'user' with onboarding pending.
-  Future<void> createProfile(String uid, String email) async {
+  Future<void> createProfile(String uid, String email, {required String fullName, required String role,}
+      ) async {
     await _doc(uid).set({
       'email': email,
-      'role': 'user',
+      'role': role,
+      'fullName': fullName,
+      'phoneNumber': '',
+      'bio': '',
       'industry': null,
       'experienceLevel': null,
       'onboardingCompleted': false,
@@ -38,7 +42,7 @@ class UserRepository {
     if (uid == null) return Stream.value(null);
     return _doc(uid).snapshots().map(
           (snap) => snap.exists ? AppUser.fromFirestore(snap) : null,
-        );
+    );
   }
 
   /// Saves onboarding choices and marks onboarding complete (US03.4).
@@ -53,4 +57,25 @@ class UserRepository {
       'onboardingCompleted': true,
     });
   }
+
+  Future updateProfile({
+    required String fullName,
+    required String phoneNumber,
+    required String bio,
+  }) async {
+    final uid = _auth.currentUser!.uid;
+
+    await _doc(uid).update({
+      'fullName': fullName,
+      'phoneNumber': phoneNumber,
+      'bio': bio,
+    });
+  }
+
+  Future deleteProfile() async {
+    final uid = _auth.currentUser!.uid;
+    await _doc(uid).delete();
+    await _auth.currentUser?.delete();
+  }
 }
+

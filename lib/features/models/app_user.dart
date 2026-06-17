@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// Profile document stored at `users/{uid}`.
 class AppUser {
   final String uid;
   final String email;
-  final String role; // 'user' | 'admin'
+  final String role;
+  final String? fullName;
+  final String? phoneNumber;
+  final String? bio;
   final String? industry;
   final String? experienceLevel;
   final bool onboardingCompleted;
@@ -13,22 +15,35 @@ class AppUser {
     required this.uid,
     required this.email,
     required this.role,
-    required this.industry,
-    required this.experienceLevel,
     required this.onboardingCompleted,
+    this.fullName,
+    this.phoneNumber,
+    this.bio,
+    this.industry,
+    this.experienceLevel,
   });
 
   bool get isAdmin => role == 'admin';
+  bool get isCompany => role == 'company';
+  bool get isSeeker => role == 'seeker';
 
-  factory AppUser.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+  factory AppUser.fromFirestore(
+      DocumentSnapshot<Map<String, dynamic>> doc,
+      ) {
     final data = doc.data() ?? {};
+
     return AppUser(
-      uid: doc.id,
-      email: data['email'] ?? '',
-      role: data['role'] ?? 'user',
-      industry: data['industry'],
-      experienceLevel: data['experienceLevel'],
-      onboardingCompleted: data['onboardingCompleted'] ?? false,
+    uid: doc.id,
+    email: data['email'] ?? '',
+    role: data['role'] ?? 'seeker',
+    fullName: data['fullName'],
+    phoneNumber: data['phoneNumber'],
+    bio: data['bio'],
+    industry: data['industry'],
+    experienceLevel: data['experienceLevel'],
+    onboardingCompleted:
+    data['onboardingCompleted'] ?? false,
     );
+
   }
 }
