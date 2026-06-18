@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:jobseeker/features/articles/articles_feed_screen.dart';
 import 'package:jobseeker/features/bookmarks/bookmarks_screen.dart';
 import 'package:jobseeker/features/profile/profile_screen.dart';
+import 'package:jobseeker/features/jobs/jobs_screen.dart';
 
 /// CareerCompass shell: Home (articles + news) / Bookmarks / Profile.
 class MainScreen extends StatefulWidget {
@@ -17,7 +18,9 @@ class _MainScreenState extends State<MainScreen> {
   late final List<Widget> _pages = [
     const ArticlesFeedScreen(),
     BookmarksScreen(),
+    const JobsScreen(),
     const ProfileScreen(),
+
   ];
 
   @override
@@ -32,9 +35,10 @@ class _MainScreenState extends State<MainScreen> {
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.bookmark), label: 'Tersimpan'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
+          BottomNavigationBarItem(icon: Icon(Icons.bookmark), label: 'Bookmark'),
+          BottomNavigationBarItem(icon: Icon(Icons.work_outline), label: 'Job'),
+          // BottomNavigationBarItem(icon: Icon(Icons.notifications_none), label: 'Notifications'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
     );
