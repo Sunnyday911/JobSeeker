@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:jobseeker/features/repositories/user_repository.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -14,6 +15,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _userRepo = UserRepository();
+
+  String _selectedRole = 'seeker';
 
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -52,9 +56,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
       // Update display name
       await credential.user?.updateDisplayName(_nameController.text.trim());
 
+      await _userRepo.createProfile(
+        credential.user!.uid,
+        _emailController.text.trim(),
+        fullName: _nameController.text.trim(),
+        role: _selectedRole,
+      );
+
+      await FirebaseAuth.instance.signOut();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Account created successfully! Please login.'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
+      );
+
       if (mounted) {
-        Navigator.pushReplacementNamed(context, 'home');
+        Navigator.pop(context);
       }
+
     } on FirebaseAuthException catch (e) {
       String errorMessage = "An error occurred";
       if (e.code == 'weak-password') {
@@ -142,6 +166,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     },
                   ),
                   const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: _selectedRole,
+                    decoration: const InputDecoration(
+                      labelText: 'Role',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'seeker',
+                        child: Text('Job Seeker'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'company',
+                        child: Text('Company'),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          _selectedRole = value;
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 16),
                   TextFormField(
                     controller: _passwordController,
                     obscureText: _obscurePassword,
@@ -205,7 +254,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const Text("Already have an account?"),
                       TextButton(
                         onPressed: () {
-                          Navigator.pushReplacementNamed(context, 'login');
+                          Navigator.pop(context);
                         },
                         child: const Text('Login'),
                       ),
