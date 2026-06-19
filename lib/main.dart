@@ -79,7 +79,6 @@ class MyApp extends StatelessWidget {
 
       routes: {
         'register': (context) => const RegisterScreen(),
-        'forum': (context) => const ForumFeedScreen(),
         'post_question': (context) => const PostQuestionScreen(),
         'notifications': (context) => const NotificationsScreen(),
       },
