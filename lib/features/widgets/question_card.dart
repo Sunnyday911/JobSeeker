@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:jobseeker/features/models/question.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:jobseeker/features/repositories/forum_repository.dart';
 
 class QuestionCard extends StatelessWidget {
   final Question question;
@@ -17,6 +20,9 @@ class QuestionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final isOwner =
+        currentUser?.uid == question.authorId;
 
     return Card(
       elevation: 0,
@@ -37,7 +43,10 @@ class QuestionCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: colorScheme.secondaryContainer,
                       borderRadius: BorderRadius.circular(8),
@@ -50,11 +59,44 @@ class QuestionCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Text(
-                    _formatTimeAgo(question.createdAt),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        _formatTimeAgo(question.createdAt),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+
+                      if (isOwner)
+                        PopupMenuButton<String>(
+                          onSelected: (value) {
+                            if (value == 'edit') {
+                              _showEditDialog(
+                                context,
+                                question,
+                              );
+                            }
+
+                            if (value == 'delete') {
+                              _showDeleteDialog(
+                                context,
+                                question.id,
+                              );
+                            }
+                          },
+                          itemBuilder: (context) => const [
+                            PopupMenuItem(
+                              value: 'edit',
+                              child: Text('Edit'),
+                            ),
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Text('Delete'),
+                            ),
+                          ],
+                        ),
+                    ],
                   ),
                 ],
               ),
@@ -117,6 +159,131 @@ class QuestionCard extends StatelessWidget {
     );
   }
 
+  Future<void> _showDeleteDialog(
+      BuildContext context,
+      String questionId,
+      ) async {
+    final repo = ForumRepository();
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Delete Question'),
+        content: const Text(
+          'Are you sure you want to delete this question?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () =>
+                Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await repo.deleteQuestion(questionId);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content:
+            Text('Question deleted successfully'),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _showEditDialog(
+      BuildContext context,
+      Question question,
+      ) async {
+    final titleController =
+    TextEditingController(
+      text: question.title,
+    );
+
+    final contentController =
+    TextEditingController(
+      text: question.content,
+    );
+
+    final repo = ForumRepository();
+
+    await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Edit Question'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleController,
+                decoration:
+                const InputDecoration(
+                  labelText: 'Title',
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: contentController,
+                maxLines: 5,
+                decoration:
+                const InputDecoration(
+                  labelText: 'Content',
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () =>
+                Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              await repo.updateQuestion(
+                question.id,
+                {
+                  'title':
+                  titleController.text.trim(),
+                  'content':
+                  contentController.text.trim(),
+                  'editedAt':
+                  Timestamp.now(),
+                },
+              );
+
+              if (context.mounted) {
+                Navigator.pop(context);
+
+                ScaffoldMessenger.of(context)
+                    .showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Question updated successfully',
+                    ),
+                  ),
+                );
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _formatTimeAgo(DateTime date) {
     final duration = DateTime.now().difference(date);
     if (duration.inDays > 7) {
@@ -170,3 +337,4 @@ class _ActionIcon extends StatelessWidget {
     );
   }
 }
+

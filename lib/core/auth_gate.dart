@@ -4,7 +4,7 @@ import 'package:jobseeker/features/home/main_screen.dart';
 import 'package:jobseeker/features/models/app_user.dart';
 import 'package:jobseeker/features/onboarding/onboarding_screen.dart';
 import 'package:jobseeker/features/repositories/user_repository.dart';
-import 'package:jobseeker/features/screens/login.dart';
+import 'package:jobseeker/screens/login_screen.dart';
 
 /// Root widget that decides where an authenticated session lands:
 /// - signed out                  -> LoginScreen

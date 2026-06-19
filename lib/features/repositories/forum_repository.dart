@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:jobseeker/features/models/question.dart';
 import 'package:jobseeker/features/models/reply.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ForumRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -66,8 +67,37 @@ class ForumRepository {
       final questionRef = _questionsCollection.doc(questionId);
       final replyRef = questionRef.collection('replies').doc();
 
+      final currentUser = FirebaseAuth.instance.currentUser;
+
+      final questionDoc = await questionRef.get();
+
+      if (questionDoc.exists &&
+          currentUser != null) {
+
+        final questionData = questionDoc.data();
+        final authorId = questionData?['authorId'];
+
+        if (authorId != null &&
+            authorId != currentUser.uid) {
+
+          await _firestore
+              .collection('users')
+              .doc(authorId)
+              .collection('notifications')
+              .add({
+            'title': 'New Reply',
+            'body':
+            '${currentUser.displayName ?? "Someone"} replied to your question',
+            'createdAt': Timestamp.now(),
+            'read': false,
+            'route': 'forum',
+          });
+        }
+      }
+
       await _firestore.runTransaction((transaction) async {
         transaction.set(replyRef, reply.toJson());
+
         transaction.update(questionRef, {
           'replyCount': FieldValue.increment(1),
         });
@@ -98,6 +128,34 @@ class ForumRepository {
   Future<void> upvoteQuestion(String questionId) async {
     try {
       final questionRef = _questionsCollection.doc(questionId);
+      final currentUser = FirebaseAuth.instance.currentUser;
+
+      final questionDoc =
+      await FirebaseFirestore.instance
+          .collection('questions')
+          .doc(questionId)
+          .get();
+
+      final questionData = questionDoc.data();
+      final authorId = questionData?['authorId'];
+
+      if (authorId != null &&
+          currentUser != null &&
+          authorId != currentUser.uid) {
+
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(authorId)
+            .collection('notifications')
+            .add({
+          'title': 'New Like',
+          'body':
+          '${currentUser.displayName ?? "Someone"} liked your post',
+          'createdAt': Timestamp.now(),
+          'read': false,
+          'route': 'forum',
+        });
+      }
 
       await _firestore.runTransaction((transaction) async {
         final snapshot = await transaction.get(questionRef);
@@ -107,6 +165,7 @@ class ForumRepository {
 
         final newUpvotes = (snapshot.data()?['upvotes'] ?? 0) + 1;
         transaction.update(questionRef, {'upvotes': newUpvotes});
+
       });
     } catch (e) {
       throw Exception('Failed to upvote question: $e');
