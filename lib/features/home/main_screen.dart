@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:jobseeker/features/articles/articles_feed_screen.dart';
 import 'package:jobseeker/features/bookmarks/bookmarks_screen.dart';
 import 'package:jobseeker/features/profile/profile_screen.dart';
+import 'package:jobseeker/features/jobs/jobs_screen.dart';
+
 import 'package:jobseeker/screens/forum_feed_screen.dart';
+
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -18,7 +21,9 @@ class _MainScreenState extends State<MainScreen> {
     const ArticlesFeedScreen(),
     const ForumFeedScreen(),
     BookmarksScreen(),
+    const JobsScreen(),
     const ProfileScreen(),
+
   ];
 
   String get _title {
@@ -64,6 +69,13 @@ class _MainScreenState extends State<MainScreen> {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Colors.blueAccent,
         unselectedItemColor: Colors.grey,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.bookmark), label: 'Bookmark'),
+          BottomNavigationBarItem(icon: Icon(Icons.work_outline), label: 'Job'),
+          // BottomNavigationBarItem(icon: Icon(Icons.notifications_none), label: 'Notifications'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        ],
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.home),
