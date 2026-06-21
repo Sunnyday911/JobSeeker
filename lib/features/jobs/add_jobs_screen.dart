@@ -16,6 +16,8 @@ class _AddJobScreenState extends State<AddJobScreen> {
   final TextEditingController _companyController = TextEditingController();
   final TextEditingController _posterController = TextEditingController();
   final TextEditingController _salaryController = TextEditingController();
+  final TextEditingController _locationController = TextEditingController();
+  final TextEditingController _categoryController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
   bool _isSubmitting = false;
@@ -31,7 +33,9 @@ class _AddJobScreenState extends State<AddJobScreen> {
           'company': _companyController.text.trim(),
           'poster_name': _posterController.text.trim(),
           'salary': _salaryController.text.trim(),
-          'descriptio': _descriptionController.text.trim(),
+          'location': _locationController.text.trim(),
+          'category': _categoryController.text.trim(),
+          'description': _descriptionController.text.trim(),
           'created_at': FieldValue.serverTimestamp(), // Catat waktu posting
         });
 
@@ -59,6 +63,8 @@ class _AddJobScreenState extends State<AddJobScreen> {
     _companyController.dispose();
     _posterController.dispose();
     _salaryController.dispose();
+    _locationController.dispose();
+    _categoryController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
@@ -111,6 +117,24 @@ class _AddJobScreenState extends State<AddJobScreen> {
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) => value!.isEmpty ? "Wajib diisi" : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _locationController,
+                decoration: const InputDecoration(
+                  labelText: 'Lokasi (Contoh: Jakarta)',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) => value!.isEmpty ? 'Wajib diisi' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _categoryController,
+                decoration: const InputDecoration(
+                  labelText: 'Kategori (Contoh: IT, Keuangan)',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) => value!.isEmpty ? 'Wajib diisi' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(

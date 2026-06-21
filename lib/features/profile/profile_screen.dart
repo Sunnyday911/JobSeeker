@@ -5,6 +5,9 @@ import 'package:jobseeker/features/admin/manage_articles_screen.dart';
 import 'package:jobseeker/features/models/app_user.dart';
 import 'package:jobseeker/features/repositories/user_repository.dart';
 import 'package:jobseeker/features/profile/edit_profile_screen.dart';
+import 'package:jobseeker/features/jobs_feed/saved_jobs_screen.dart';
+import 'package:jobseeker/features/applications/my_applications_screen.dart';
+import 'package:jobseeker/features/cv/recommendations_screen.dart';
 
 /// Account info, logout, and (for admins) content-management entry points
 /// plus the demo seeder (US07).
@@ -137,8 +140,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               _infoTile(Icons.business_center_outlined, 'Industri',
                   profile?.industry ?? '-'),
+              _infoTile(Icons.location_city_outlined, 'Domisili',
+                  profile?.city ?? '-'),
               _infoTile(Icons.bar_chart, 'Level Pengalaman',
                   profile?.experienceLevel ?? '-'),
+              const Divider(height: 32),
+
+              // Activity hub — quick links to the user's job-seeking features.
+              const Text('Aktivitas',
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey)),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.auto_awesome_outlined),
+                title: const Text('Analisis CV & Rekomendasi'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const RecommendationsScreen()),
+                ),
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.bookmark_outline),
+                title: const Text('Lowongan Tersimpan'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SavedJobsScreen()),
+                ),
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.assignment_outlined),
+                title: const Text('Lamaran Saya'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const MyApplicationsScreen()),
+                ),
+              ),
               const Divider(height: 32),
 
               // Admin-only content management (US07.1).

@@ -22,6 +22,7 @@ class UserRepository {
       'bio': '',
       'industry': null,
       'experienceLevel': null,
+      'city': null,
       'onboardingCompleted': false,
       'createdAt': FieldValue.serverTimestamp(),
     });
@@ -48,11 +49,13 @@ class UserRepository {
   /// Saves onboarding choices and marks onboarding complete (US03.4).
   Future<void> completeOnboarding({
     required String industry,
+    required String city,
     required String experienceLevel,
   }) async {
     final uid = _auth.currentUser!.uid;
     await _doc(uid).update({
       'industry': industry,
+      'city': city,
       'experienceLevel': experienceLevel,
       'onboardingCompleted': true,
     });

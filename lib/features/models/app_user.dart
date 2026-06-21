@@ -9,6 +9,7 @@ class AppUser {
   final String? bio;
   final String? industry;
   final String? experienceLevel;
+  final String? city;
   final bool onboardingCompleted;
 
   AppUser({
@@ -21,6 +22,7 @@ class AppUser {
     this.bio,
     this.industry,
     this.experienceLevel,
+    this.city,
   });
 
   bool get isAdmin => role == 'admin';
@@ -41,6 +43,7 @@ class AppUser {
     bio: data['bio'],
     industry: data['industry'],
     experienceLevel: data['experienceLevel'],
+    city: data['city'],
     onboardingCompleted:
     data['onboardingCompleted'] ?? false,
     );

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:jobseeker/features/notifications/notification_provider.dart';
 import 'package:jobseeker/features/notifications/notification_service.dart';
+import 'package:jobseeker/core/validators.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -118,11 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       prefixIcon: Icon(Icons.email_outlined),
                       border: OutlineInputBorder(),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) return 'Please enter your email';
-                      if (!value.contains('@')) return 'Please enter a valid email';
-                      return null;
-                    },
+                    validator: Validators.email,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -143,11 +140,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       border: const OutlineInputBorder(),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) return 'Please enter your password';
-                      if (value.length < 6) return 'Password must be at least 6 characters';
-                      return null;
-                    },
+                    validator: (value) => (value == null || value.isEmpty)
+                        ? 'Please enter your password'
+                        : null,
                   ),
                   const SizedBox(height: 24),
                   FilledButton(

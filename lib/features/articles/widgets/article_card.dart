@@ -55,7 +55,7 @@ class ArticleCard extends StatelessWidget {
                       _chip(article.category, Colors.blue),
                       const SizedBox(width: 8),
                       if (article.isFeatured)
-                        _chip('Featured', Colors.orange, icon: Icons.star),
+                        _chip('Unggulan', Colors.orange, icon: Icons.star),
                     ],
                   ),
                   const SizedBox(height: 10),
