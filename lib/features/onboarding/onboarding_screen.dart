@@ -14,15 +14,17 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final _userRepo = UserRepository();
   String? _industry;
+  String? _city;
   String? _level;
   bool _isSaving = false;
 
   Future<void> _save() async {
-    if (_industry == null || _level == null) return;
+    if (_industry == null || _city == null || _level == null) return;
     setState(() => _isSaving = true);
     try {
       await _userRepo.completeOnboarding(
         industry: _industry!,
+        city: _city!,
         experienceLevel: _level!,
       );
       // AuthGate reacts to the profile update and shows MainScreen (US03.5).
@@ -38,7 +40,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final canSubmit = _industry != null && _level != null && !_isSaving;
+    final canSubmit =
+        _industry != null && _city != null && _level != null && !_isSaving;
     return Scaffold(
       appBar: AppBar(title: const Text('Lengkapi Profil'), centerTitle: true),
       body: ListView(
@@ -64,6 +67,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 .map((i) => DropdownMenuItem(value: i, child: Text(i)))
                 .toList(),
             onChanged: (v) => setState(() => _industry = v),
+          ),
+          const SizedBox(height: 24),
+          const Text('Kota Domisili',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            initialValue: _city,
+            isExpanded: true,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              hintText: 'Pilih kota domisili',
+            ),
+            items: kIndonesianCities
+                .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                .toList(),
+            onChanged: (v) => setState(() => _city = v),
           ),
           const SizedBox(height: 24),
           const Text('Level Pengalaman',

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:jobseeker/features/articles/articles_feed_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:jobseeker/features/home/home_dashboard_screen.dart';
 import 'package:jobseeker/features/bookmarks/bookmarks_screen.dart';
 import 'package:jobseeker/features/profile/profile_screen.dart';
-import 'package:jobseeker/features/jobs/jobs_screen.dart';
-
+import 'package:jobseeker/features/jobs_feed/jobs_feed_screen.dart';
+import 'package:jobseeker/features/notifications/notification_provider.dart';
 import 'package:jobseeker/screens/forum_feed_screen.dart';
-
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -18,51 +18,44 @@ class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
   late final List<Widget> _pages = [
-    const ArticlesFeedScreen(),
-    const ForumFeedScreen(),
-    BookmarksScreen(),
-    const JobsScreen(),
-    const ProfileScreen(),
-
+    HomeDashboardScreen(onOpenJobsTab: () => setState(() => _currentIndex = 1)),
+    const JobsFeedScreen(), // 1 Lowongan (Adzuna + Perusahaan)
+    const ForumFeedScreen(), // 2 Forum
+    BookmarksScreen(), // 3 Tersimpan (artikel)
+    const ProfileScreen(), // 4 Profil
   ];
 
-  String get _title {
-    switch (_currentIndex) {
-      case 0:
-        return 'CareerCompass';
-      case 1:
-        return 'Forum';
-      case 2:
-        return 'Bookmarks';
-      case 3:
-        return 'Profile';
-      default:
-        return 'CareerCompass';
-    }
-  }
+  static const List<String> _titles = [
+    'CareerCompass',
+    'Lowongan',
+    'Forum',
+    'Tersimpan',
+    'Profil',
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_title),
+        title: Text(_titles[_currentIndex]),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            tooltip: 'Notifications',
-            onPressed: () {
-              Navigator.pushNamed(
-                context,
-                'notifications',
+          Consumer<NotificationProvider>(
+            builder: (context, notif, _) {
+              final count = notif.unreadCount;
+              return IconButton(
+                tooltip: 'Notifications',
+                icon: Badge(
+                  isLabelVisible: count > 0,
+                  label: Text('$count'),
+                  child: const Icon(Icons.notifications_outlined),
+                ),
+                onPressed: () => Navigator.pushNamed(context, 'notifications'),
               );
             },
           ),
         ],
       ),
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _pages),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
@@ -71,29 +64,14 @@ class _MainScreenState extends State<MainScreen> {
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.bookmark), label: 'Bookmark'),
-          BottomNavigationBarItem(icon: Icon(Icons.work_outline), label: 'Job'),
-          // BottomNavigationBarItem(icon: Icon(Icons.notifications_none), label: 'Notifications'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.work_outline), label: 'Lowongan'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.forum_outlined), label: 'Forum'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.bookmark), label: 'Tersimpan'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
         ],
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.forum_outlined),
-              label: 'Forum',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.bookmark),
-              label: 'Tersimpan',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: 'Profil',
-            ),
-          ],
       ),
     );
   }

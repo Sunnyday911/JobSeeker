@@ -23,6 +23,38 @@ const List<String> kExperienceLevels = [
   'Senior',
 ];
 
+/// Indonesian cities for the onboarding domicile picker (US03.3).
+const List<String> kIndonesianCities = [
+  'Jakarta',
+  'Surabaya',
+  'Bandung',
+  'Medan',
+  'Semarang',
+  'Makassar',
+  'Palembang',
+  'Tangerang',
+  'Bekasi',
+  'Depok',
+  'Bogor',
+  'Yogyakarta',
+  'Malang',
+  'Denpasar',
+  'Batam',
+  'Pekanbaru',
+  'Padang',
+  'Other',
+];
+
+/// Application/lamaran statuses (US13.2).
+const List<String> kApplicationStatuses = [
+  'Dikirim',
+  'Ditinjau',
+  'Interview',
+  'Tes',
+  'Tawaran Diterima',
+  'Ditolak',
+];
+
 /// Article categories used for filtering and the admin form (US04.2, US07.2).
 const List<String> kArticleCategories = [
   'Resume Tips',

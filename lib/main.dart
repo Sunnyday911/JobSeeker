@@ -7,8 +7,6 @@ import 'package:jobseeker/features/forum/forum_provider.dart';
 import 'package:jobseeker/features/repositories/notification_repository.dart';
 import 'package:jobseeker/features/notifications/notification_provider.dart';
 import 'package:jobseeker/features/notifications/notification_service.dart';
-import 'package:jobseeker/features/home/main_screen.dart';
-import 'package:jobseeker/screens/login_screen.dart';
 import 'package:jobseeker/screens/register_screen.dart';
 import 'package:jobseeker/screens/forum_feed_screen.dart';
 import 'package:jobseeker/screens/post_question_screen.dart';
@@ -81,6 +79,7 @@ class MyApp extends StatelessWidget {
         'register': (context) => const RegisterScreen(),
         'post_question': (context) => const PostQuestionScreen(),
         'notifications': (context) => const NotificationsScreen(),
+        'forum': (context) => const ForumFeedScreen(),
       },
     );
   }

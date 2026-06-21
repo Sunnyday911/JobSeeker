@@ -9,7 +9,8 @@ import 'package:jobseeker/features/repositories/user_repository.dart';
 
 /// Main feed: industry news (US08) + filterable article list (US04).
 class ArticlesFeedScreen extends StatefulWidget {
-  const ArticlesFeedScreen({super.key});
+  final String? initialCategory;
+  const ArticlesFeedScreen({super.key, this.initialCategory});
 
   @override
   State<ArticlesFeedScreen> createState() => _ArticlesFeedScreenState();
@@ -26,6 +27,7 @@ class _ArticlesFeedScreenState extends State<ArticlesFeedScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialCategory != null) _category = widget.initialCategory!;
     _userRepo.getCurrentProfile().then((p) {
       if (mounted) setState(() => _profile = p);
     });

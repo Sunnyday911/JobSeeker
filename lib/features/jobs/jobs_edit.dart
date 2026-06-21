@@ -19,6 +19,8 @@ class _EditJobScreenState extends State<EditJobScreen> {
   // Controller untuk mengisi dan mengambil teks dari TextField
   late TextEditingController _titleController;
   late TextEditingController _companyController;
+  late TextEditingController _locationController;
+  late TextEditingController _categoryController;
   late TextEditingController _descriptionController;
 
   bool _isLoading = false;
@@ -29,6 +31,8 @@ class _EditJobScreenState extends State<EditJobScreen> {
     // Isi otomatis form dengan data yang sudah ada
     _titleController = TextEditingController(text: widget.jobData['title'] ?? '');
     _companyController = TextEditingController(text: widget.jobData['company'] ?? '');
+    _locationController = TextEditingController(text: widget.jobData['location'] ?? '');
+    _categoryController = TextEditingController(text: widget.jobData['category'] ?? '');
     _descriptionController = TextEditingController(text: widget.jobData['description'] ?? '');
   }
 
@@ -36,6 +40,8 @@ class _EditJobScreenState extends State<EditJobScreen> {
   void dispose() {
     _titleController.dispose();
     _companyController.dispose();
+    _locationController.dispose();
+    _categoryController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
@@ -61,6 +67,8 @@ class _EditJobScreenState extends State<EditJobScreen> {
       await FirebaseFirestore.instance.collection('jobs').doc(widget.jobId).update({
         'title': _titleController.text.trim(),
         'company': _companyController.text.trim(),
+        'location': _locationController.text.trim(),
+        'category': _categoryController.text.trim(),
         'description': _descriptionController.text.trim(),
         // poster_name tidak diubah, biarkan seperti aslinya
       });
@@ -125,6 +133,38 @@ class _EditJobScreenState extends State<EditJobScreen> {
               controller: _companyController,
               decoration: InputDecoration(
                 hintText: 'e.g. Tech Corp',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            const Text(
+              'Location',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _locationController,
+              decoration: InputDecoration(
+                hintText: 'e.g. Jakarta',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            const Text(
+              'Category',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _categoryController,
+              decoration: InputDecoration(
+                hintText: 'e.g. IT, Finance',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
