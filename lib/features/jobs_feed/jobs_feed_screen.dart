@@ -21,13 +21,17 @@ class JobsFeedScreen extends StatefulWidget {
 class _JobsFeedScreenState extends State<JobsFeedScreen> {
   final _adzuna = AdzunaService.instance;
   final _searchCtrl = TextEditingController();
+  final _locationCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
 
   final List<Job> _jobs = [];
   String _source = 'adzuna'; // 'adzuna' | 'company'
   AppUser? _profile;
   String _what = '';
+  String _where = ''; // location filter (US05.2)
+  String? _category; // Adzuna category tag (US05.3)
   String? _contract; // full_time / part_time / contract
+  List<({String tag, String label})> _categories = [];
   int _page = 1;
   bool _isLoading = false;
   bool _hasMore = true;
@@ -47,6 +51,7 @@ class _JobsFeedScreenState extends State<JobsFeedScreen> {
     super.initState();
     _scrollCtrl.addListener(_onScroll);
     _load(reset: true);
+    _loadCategories();
     UserRepository().getCurrentProfile().then((p) {
       if (!mounted) return;
       setState(() => _profile = p);
@@ -68,6 +73,7 @@ class _JobsFeedScreenState extends State<JobsFeedScreen> {
   @override
   void dispose() {
     _searchCtrl.dispose();
+    _locationCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();
   }
@@ -95,6 +101,8 @@ class _JobsFeedScreenState extends State<JobsFeedScreen> {
     try {
       final results = await _adzuna.searchJobs(
         what: _what,
+        where: _where,
+        category: _category,
         contractType: _contract,
         page: _page,
       );
@@ -111,9 +119,19 @@ class _JobsFeedScreenState extends State<JobsFeedScreen> {
     }
   }
 
-  void _applySearch() {
+  void _applyFilters() {
     _what = _searchCtrl.text.trim();
+    _where = _locationCtrl.text.trim();
     _load(reset: true);
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final cats = await _adzuna.fetchCategories();
+      if (mounted) setState(() => _categories = cats);
+    } catch (_) {
+      // Keep empty → dropdown shows only "Semua Kategori".
+    }
   }
 
   @override
@@ -183,17 +201,57 @@ class _JobsFeedScreenState extends State<JobsFeedScreen> {
               child: TextField(
                 controller: _searchCtrl,
                 textInputAction: TextInputAction.search,
-                onSubmitted: (_) => _applySearch(),
+                onSubmitted: (_) => _applyFilters(),
                 decoration: InputDecoration(
                   hintText: 'Cari posisi atau perusahaan...',
                   prefixIcon: const Icon(Icons.search),
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.arrow_forward),
-                    onPressed: _applySearch,
+                    onPressed: _applyFilters,
                   ),
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
+              ),
+            ),
+            // Location filter (US05.2)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: TextField(
+                controller: _locationCtrl,
+                textInputAction: TextInputAction.search,
+                onSubmitted: (_) => _applyFilters(),
+                decoration: InputDecoration(
+                  hintText: 'Lokasi (kota/provinsi)...',
+                  prefixIcon: const Icon(Icons.location_on_outlined),
+                  isDense: true,
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            // Category filter (US05.3)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: DropdownButtonFormField<String?>(
+                initialValue: _category,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.category_outlined),
+                  isDense: true,
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                items: [
+                  const DropdownMenuItem<String?>(
+                      value: null, child: Text('Semua Kategori')),
+                  ..._categories.map((c) => DropdownMenuItem<String?>(
+                      value: c.tag, child: Text(c.label))),
+                ],
+                onChanged: (v) {
+                  setState(() => _category = v);
+                  _load(reset: true); // auto-update on filter (US05.5)
+                },
               ),
             ),
             SizedBox(
