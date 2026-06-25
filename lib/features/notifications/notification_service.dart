@@ -1,34 +1,31 @@
-import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationService {
   NotificationService._internal();
   static final NotificationService _instance = NotificationService._internal();
   static NotificationService get instance => _instance;
-
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
 
-  // Navigation key to handle routing
   GlobalKey<NavigatorState>? _navigatorKey;
 
   Future<void> initialize(GlobalKey<NavigatorState> navigatorKey) async {
     _navigatorKey = navigatorKey;
 
-    // 1. Request Permissions
     await requestPermissions();
 
-    // 2. Initialize Local Notifications
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-    
+    const AndroidInitializationSettings androidSettings =
+    AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    const DarwinInitializationSettings iosSettings = DarwinInitializationSettings();
+
     const InitializationSettings initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: DarwinInitializationSettings(),
+      android: androidSettings,
+      iOS: iosSettings,
     );
 
     await _localNotifications.initialize(
@@ -36,71 +33,112 @@ class NotificationService {
       onDidReceiveNotificationResponse: _onDidReceiveNotificationResponse,
     );
 
-    // 3. Handle Foreground Messages
-    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+    await _createNotificationChannel();
 
-    // 4. Handle Notification Clicks when app is in background/terminated
+    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
     FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationClick);
 
-    // Check if app was opened from a terminated state via notification
-    RemoteMessage? initialMessage = await _fcm.getInitialMessage();
+    final RemoteMessage? initialMessage = await _fcm.getInitialMessage();
     if (initialMessage != null) {
       _handleNotificationClick(initialMessage);
     }
 
-    // 5. Get and Save Token
     await saveTokenToFirestore();
   }
 
   Future<void> requestPermissions() async {
-    NotificationSettings settings = await _fcm.requestPermission(
+    await _fcm.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
-    print('User granted permission: ${settings.authorizationStatus}');
   }
 
   Future<void> saveTokenToFirestore() async {
-    String? token = await _fcm.getToken();
-    User? user = FirebaseAuth.instance.currentUser;
+    final String? token = await _fcm.getToken();
+    final User? user = FirebaseAuth.instance.currentUser;
 
     if (token != null && user != null) {
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .set({
         'fcmToken': token,
         'lastTokenUpdate': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     }
   }
 
-  Future<void> _handleForegroundMessage(RemoteMessage message) async {
-    print('Got a message whilst in the foreground!');
-    print('Message data: ${message.data}');
+  Future<void> _createNotificationChannel() async {
+    const AndroidNotificationChannel channel = AndroidNotificationChannel(
+      'high_importance_channel', // 🔥 Unified ID
+      'High Importance Notifications',
+      description: 'Notifications for likes, replies, and updates',
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
+    );
 
-    RemoteNotification? notification = message.notification;
-    AndroidNotification? android = message.notification?.android;
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channel);
+  }
+
+  Future<void> showLocalNotification({
+    required String title,
+    required String body,
+    String? route,
+  }) async {
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'high_importance_channel', // 🔥 Fixed: Must match channel registration
+      'High Importance Notifications',
+      importance: Importance.max,
+      priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
+      icon: '@mipmap/ic_launcher',
+    );
+
+    const NotificationDetails details = NotificationDetails(
+      android: androidDetails,
+    );
+
+    await _localNotifications.show(
+      DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      title,
+      body,
+      details,
+      payload: route,
+    );
+  }
+
+  Future<void> _handleForegroundMessage(RemoteMessage message) async {
+    final RemoteNotification? notification = message.notification;
+    final AndroidNotification? android = message.notification?.android;
 
     if (notification != null && android != null) {
-      _localNotifications.show(
+      await _localNotifications.show(
         notification.hashCode,
         notification.title,
         notification.body,
         const NotificationDetails(
           android: AndroidNotificationDetails(
-            'high_importance_channel', // id
-            'High Importance Notifications', // name
+            'high_importance_channel', // 🔥 Fixed: Match the channel explicitly
+            'High Importance Notifications',
             importance: Importance.max,
             priority: Priority.high,
             icon: '@mipmap/ic_launcher',
           ),
         ),
-        payload: message.data['route'], // Assuming data contains a 'route'
+        payload: message.data['route'], // Passes payload properly on foreground tap
       );
     }
   }
 
+
   void _onDidReceiveNotificationResponse(NotificationResponse response) {
     final String? payload = response.payload;
+
     if (payload != null && payload.isNotEmpty) {
       _navigatorKey?.currentState?.pushNamed(payload);
     }
@@ -108,6 +146,7 @@ class NotificationService {
 
   void _handleNotificationClick(RemoteMessage message) {
     final String? route = message.data['route'];
+
     if (route != null && route.isNotEmpty) {
       _navigatorKey?.currentState?.pushNamed(route);
     }

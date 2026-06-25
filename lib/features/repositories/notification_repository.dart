@@ -8,7 +8,13 @@ class NotificationRepository {
 
   Stream<List<NotificationModel>> getNotifications() {
     final user = _auth.currentUser;
-    if (user == null) return Stream.value([]);
+    print('NotificationRepository user: ${user?.uid}');
+    if (user == null) {
+      print('NotificationRepository: user is NULL');
+      return Stream.value([]);
+    }
+
+
 
     return _firestore
         .collection('users')

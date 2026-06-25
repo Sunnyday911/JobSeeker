@@ -7,6 +7,7 @@ import 'package:jobseeker/features/forum/forum_provider.dart';
 import 'package:jobseeker/features/repositories/notification_repository.dart';
 import 'package:jobseeker/features/notifications/notification_provider.dart';
 import 'package:jobseeker/features/notifications/notification_service.dart';
+import 'package:jobseeker/features/notifications/notification_listener.dart';
 import 'package:jobseeker/screens/register_screen.dart';
 import 'package:jobseeker/screens/forum_feed_screen.dart';
 import 'package:jobseeker/screens/post_question_screen.dart';
@@ -68,7 +69,9 @@ class MyApp extends StatelessWidget {
 
       navigatorKey: navigatorKey,
 
-      home: const AuthGate(),
+      home: NotificationListenerWidget(
+        child: const AuthGate(),
+      ),
 
       theme: ThemeData(
         useMaterial3: true,

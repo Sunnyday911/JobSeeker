@@ -6,7 +6,9 @@ import '../repositories/notification_repository.dart';
 class NotificationProvider with ChangeNotifier {
   final NotificationRepository _repository;
 
-  NotificationProvider(this._repository);
+  NotificationProvider(this._repository) {
+    initialize();
+  }
 
   List<NotificationModel> _notifications = [];
   bool _isLoading = false;
@@ -28,6 +30,9 @@ class NotificationProvider with ChangeNotifier {
         .getNotifications()
         .listen(
           (notifications) {
+            print(
+              'NotificationProvider loaded ${notifications.length} notifications',
+            );
         _notifications = notifications;
         _isLoading = false;
         notifyListeners();
