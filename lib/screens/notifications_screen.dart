@@ -30,6 +30,9 @@ class NotificationsScreen extends StatelessWidget {
       ),
       body: Consumer<NotificationProvider>(
         builder: (context, provider, _) {
+          print(
+            'NotificationsScreen sees ${provider.notifications.length} notifications',
+          );
           if (provider.isLoading && provider.notifications.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
