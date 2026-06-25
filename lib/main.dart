@@ -12,6 +12,8 @@ import 'package:jobseeker/screens/forum_feed_screen.dart';
 import 'package:jobseeker/screens/post_question_screen.dart';
 import 'package:jobseeker/screens/notifications_screen.dart';
 import 'package:jobseeker/core/auth_gate.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 
 final GlobalKey<NavigatorState> navigatorKey =
 GlobalKey<NavigatorState>();
@@ -20,8 +22,19 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(
+
     options: DefaultFirebaseOptions.currentPlatform,
+
   );
+
+  FlutterError.onError = (errorDetails) {
+    FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+  };
+
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
 
   await NotificationService.instance.initialize(
     navigatorKey,

@@ -6,6 +6,7 @@ import 'package:jobseeker/features/profile/profile_screen.dart';
 import 'package:jobseeker/features/jobs_feed/jobs_feed_screen.dart';
 import 'package:jobseeker/features/notifications/notification_provider.dart';
 import 'package:jobseeker/screens/forum_feed_screen.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -37,6 +38,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+
         title: Text(_titles[_currentIndex]),
         actions: [
           Consumer<NotificationProvider>(

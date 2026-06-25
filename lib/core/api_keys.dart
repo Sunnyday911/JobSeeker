@@ -7,5 +7,5 @@ class ApiKeys {
 
   // Anthropic / Claude (CV analysis + recommendations)
   static const String anthropic =
-      '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';
+      'wlee';
 }
