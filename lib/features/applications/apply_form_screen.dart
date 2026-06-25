@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:jobseeker/core/constants.dart';
 import 'package:jobseeker/features/models/application.dart';
 import 'package:jobseeker/features/models/job.dart';
 import 'package:jobseeker/features/repositories/application_repository.dart';
@@ -26,6 +27,7 @@ class _ApplyFormScreenState extends State<ApplyFormScreen> {
   final _phoneCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
   String? _dob; // yyyy-MM-dd
+  String? _platform;
   bool _isSaving = false;
 
   bool get _isEdit => widget.existing != null;
@@ -40,6 +42,8 @@ class _ApplyFormScreenState extends State<ApplyFormScreen> {
       _phoneCtrl.text = e.phone;
       _notesCtrl.text = e.notes;
       _dob = e.dateOfBirth.isEmpty ? null : e.dateOfBirth;
+      _platform =
+          kApplicationPlatforms.contains(e.platform) ? e.platform : null;
     }
   }
 
@@ -76,6 +80,12 @@ class _ApplyFormScreenState extends State<ApplyFormScreen> {
       );
       return;
     }
+    if (_platform == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pilih platform lamaran.')),
+      );
+      return;
+    }
     setState(() => _isSaving = true);
     try {
       if (_isEdit) {
@@ -85,6 +95,7 @@ class _ApplyFormScreenState extends State<ApplyFormScreen> {
           dateOfBirth: _dob!,
           address: _addressCtrl.text.trim(),
           phone: _phoneCtrl.text.trim(),
+          platform: _platform!,
           notes: _notesCtrl.text.trim(),
         );
       } else {
@@ -99,6 +110,7 @@ class _ApplyFormScreenState extends State<ApplyFormScreen> {
           dateOfBirth: _dob!,
           address: _addressCtrl.text.trim(),
           phone: _phoneCtrl.text.trim(),
+          platform: _platform!,
           notes: _notesCtrl.text.trim(),
           status: 'Dikirim',
           statusHistory: [StatusChange(status: 'Dikirim', at: now)],
@@ -175,6 +187,19 @@ class _ApplyFormScreenState extends State<ApplyFormScreen> {
                   labelText: 'No. Telepon', border: OutlineInputBorder()),
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? 'Wajib diisi' : null,
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              initialValue: _platform,
+              isExpanded: true,
+              decoration: const InputDecoration(
+                  labelText: 'Platform Lamaran (LinkedIn, Email, dll.)',
+                  border: OutlineInputBorder()),
+              items: kApplicationPlatforms
+                  .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                  .toList(),
+              onChanged: (v) => setState(() => _platform = v),
+              validator: (v) => v == null ? 'Wajib dipilih' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(

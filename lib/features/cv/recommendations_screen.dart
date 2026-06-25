@@ -7,7 +7,6 @@ import 'package:jobseeker/features/services/adzuna_service.dart';
 import 'package:jobseeker/features/services/claude_service.dart';
 import 'package:jobseeker/features/cv/cv_analysis_screen.dart';
 import 'package:jobseeker/features/jobs_feed/job_detail_screen.dart';
-import 'package:jobseeker/features/articles/articles_feed_screen.dart';
 
 /// AI job recommendations (US09): ranks Adzuna jobs against the saved CV
 /// profile, sorted by match score, with skill gaps. Refreshable.
@@ -51,8 +50,16 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
       }
       final query = profile.skills.isNotEmpty ? profile.skills.first : '';
       final jobs = await AdzunaService.instance.searchJobs(what: query);
-      final recs = await ClaudeService.instance.rankJobs(profile, jobs);
-      recs.sort((a, b) => b.matchScore.compareTo(a.matchScore)); // US09.4
+      final jobsById = {for (final j in jobs) j.id: j};
+      final ranked = await ClaudeService.instance.rankJobs(profile, jobs);
+      // Enrich with job title/company so the saved recs render on the dashboard.
+      final recs = ranked
+          .map((r) => r.copyWith(
+                jobTitle: jobsById[r.jobId]?.title,
+                company: jobsById[r.jobId]?.company,
+              ))
+          .toList()
+        ..sort((a, b) => b.matchScore.compareTo(a.matchScore)); // US09.4
       await _cvRepo.saveRecommendations(recs); // US09.7
       if (!mounted) return;
       setState(() {
@@ -89,17 +96,6 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
               );
               _load();
             },
-          ),
-          IconButton(
-            tooltip: 'Pelajari di Artikel',
-            icon: const Icon(Icons.menu_book_outlined),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const ArticlesFeedScreen(
-                    initialCategory: 'Career Development'),
-              ),
-            ),
           ),
           IconButton(
             tooltip: 'Segarkan',

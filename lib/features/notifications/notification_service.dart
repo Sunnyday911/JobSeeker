@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -16,34 +17,42 @@ class NotificationService {
   Future<void> initialize(GlobalKey<NavigatorState> navigatorKey) async {
     _navigatorKey = navigatorKey;
 
-    await requestPermissions();
+    // Whole flow is guarded so a missing APNs/native config (e.g. iOS Simulator)
+    // can never crash startup or freeze the UI.
+    try {
+      await requestPermissions();
 
-    const AndroidInitializationSettings androidSettings =
-    AndroidInitializationSettings('@mipmap/ic_launcher');
+      const AndroidInitializationSettings androidSettings =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    const DarwinInitializationSettings iosSettings = DarwinInitializationSettings();
+      const DarwinInitializationSettings iosSettings =
+          DarwinInitializationSettings();
 
-    const InitializationSettings initializationSettings = InitializationSettings(
-      android: androidSettings,
-      iOS: iosSettings,
-    );
+      const InitializationSettings initializationSettings =
+          InitializationSettings(
+        android: androidSettings,
+        iOS: iosSettings,
+      );
 
-    await _localNotifications.initialize(
-      initializationSettings,
-      onDidReceiveNotificationResponse: _onDidReceiveNotificationResponse,
-    );
+      await _localNotifications.initialize(
+        initializationSettings,
+        onDidReceiveNotificationResponse: _onDidReceiveNotificationResponse,
+      );
 
-    await _createNotificationChannel();
+      await _createNotificationChannel();
 
-    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationClick);
+      FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+      FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationClick);
 
-    final RemoteMessage? initialMessage = await _fcm.getInitialMessage();
-    if (initialMessage != null) {
-      _handleNotificationClick(initialMessage);
+      final RemoteMessage? initialMessage = await _fcm.getInitialMessage();
+      if (initialMessage != null) {
+        _handleNotificationClick(initialMessage);
+      }
+
+      await saveTokenToFirestore();
+    } catch (e) {
+      debugPrint('NotificationService.initialize skipped: $e');
     }
-
-    await saveTokenToFirestore();
   }
 
   Future<void> requestPermissions() async {
@@ -55,6 +64,17 @@ class NotificationService {
   }
 
   Future<void> saveTokenToFirestore() async {
+    // On iOS, FCM.getToken() requires an APNs token first. Without one (e.g. the
+    // Simulator, or before native push config is complete) it throws — so check
+    // for the APNs token and skip gracefully instead of crashing.
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      final apnsToken = await _fcm.getAPNSToken();
+      if (apnsToken == null) {
+        debugPrint('APNs token unavailable — skipping FCM token fetch.');
+        return;
+      }
+    }
+
     final String? token = await _fcm.getToken();
     final User? user = FirebaseAuth.instance.currentUser;
 

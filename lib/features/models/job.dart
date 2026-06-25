@@ -17,6 +17,7 @@ class Job {
   final String? redirectUrl;
   final String? contractTime; // full_time / part_time
   final String? contractType; // permanent / contract
+  final String? note; // user's personal note on a saved job (US07 UPDATE)
 
   const Job({
     required this.id,
@@ -31,6 +32,7 @@ class Job {
     this.redirectUrl,
     this.contractTime,
     this.contractType,
+    this.note,
   });
 
   factory Job.fromAdzuna(Map<String, dynamic> j) {
@@ -66,6 +68,7 @@ class Job {
         'redirectUrl': redirectUrl,
         'contractTime': contractTime,
         'contractType': contractType,
+        'note': note,
       };
 
   factory Job.fromMap(Map<String, dynamic> m) => Job(
@@ -83,6 +86,7 @@ class Job {
         redirectUrl: m['redirectUrl']?.toString(),
         contractTime: m['contractTime']?.toString(),
         contractType: m['contractType']?.toString(),
+        note: m['note']?.toString(),
       );
 
   /// Adapts an internal company `jobs` Firestore doc into a [Job] so internal

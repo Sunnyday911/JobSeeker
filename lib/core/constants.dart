@@ -1,5 +1,4 @@
-// Shared static option lists used across CareerCompass onboarding, filters,
-// and the admin article form.
+// Shared static option lists used across JobSeeker onboarding and filters.
 
 /// Industries shown during onboarding (US03.2).
 const List<String> kIndustries = [
@@ -55,11 +54,13 @@ const List<String> kApplicationStatuses = [
   'Ditolak',
 ];
 
-/// Article categories used for filtering and the admin form (US04.2, US07.2).
-const List<String> kArticleCategories = [
-  'Resume Tips',
-  'Interview Prep',
-  'Job Search Strategy',
-  'Career Development',
-  'Networking',
+/// Platforms used to send a job application (US12.2).
+const List<String> kApplicationPlatforms = [
+  'LinkedIn',
+  'Email',
+  'JobStreet',
+  'Glints',
+  'Indeed',
+  'Website Perusahaan',
+  'Lainnya',
 ];

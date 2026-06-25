@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:jobseeker/features/home/home_dashboard_screen.dart';
-import 'package:jobseeker/features/bookmarks/bookmarks_screen.dart';
 import 'package:jobseeker/features/profile/profile_screen.dart';
 import 'package:jobseeker/features/jobs_feed/jobs_feed_screen.dart';
 import 'package:jobseeker/features/notifications/notification_provider.dart';
 import 'package:jobseeker/screens/forum_feed_screen.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -22,15 +20,13 @@ class _MainScreenState extends State<MainScreen> {
     HomeDashboardScreen(onOpenJobsTab: () => setState(() => _currentIndex = 1)),
     const JobsFeedScreen(), // 1 Lowongan (Adzuna + Perusahaan)
     const ForumFeedScreen(), // 2 Forum
-    BookmarksScreen(), // 3 Tersimpan (artikel)
-    const ProfileScreen(), // 4 Profil
+    const ProfileScreen(), // 3 Profil
   ];
 
   static const List<String> _titles = [
-    'CareerCompass',
+    'JobSeeker',
     'Lowongan',
     'Forum',
-    'Tersimpan',
     'Profil',
   ];
 
@@ -70,8 +66,6 @@ class _MainScreenState extends State<MainScreen> {
               icon: Icon(Icons.work_outline), label: 'Lowongan'),
           BottomNavigationBarItem(
               icon: Icon(Icons.forum_outlined), label: 'Forum'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.bookmark), label: 'Tersimpan'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
         ],
       ),

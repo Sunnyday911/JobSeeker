@@ -1,11 +1,17 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:jobseeker/core/constants.dart';
 import 'package:jobseeker/features/models/cv_profile.dart';
 import 'package:jobseeker/features/repositories/cv_repository.dart';
 import 'package:jobseeker/features/services/claude_service.dart';
 
-/// CV analysis with Claude (US08): paste CV → validate ≥100 chars → extract
-/// editable skill chips + level + summary → save the profile (not the raw CV).
+/// CV analysis with Claude (US08): upload a CV file (PDF/TXT) → extract text
+/// client-side → validate ≥100 chars → extract editable skill chips + level +
+/// summary → save the profile (never the raw CV file or its text).
 class CvAnalysisScreen extends StatefulWidget {
   const CvAnalysisScreen({super.key});
 
@@ -14,13 +20,13 @@ class CvAnalysisScreen extends StatefulWidget {
 }
 
 class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
-  final _cvCtrl = TextEditingController();
   final _summaryCtrl = TextEditingController();
   final _addSkillCtrl = TextEditingController();
   final _cvRepo = CvRepository();
 
   final List<String> _skills = [];
   String? _level;
+  String? _fileName; // name of the picked CV file (display only)
   bool _isAnalyzing = false;
   bool _isSaving = false;
   bool _hasResult = false;
@@ -47,7 +53,6 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
 
   @override
   void dispose() {
-    _cvCtrl.dispose();
     _summaryCtrl.dispose();
     _addSkillCtrl.dispose();
     super.dispose();
@@ -60,17 +65,48 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
     return null;
   }
 
-  Future<void> _analyze() async {
-    final text = _cvCtrl.text.trim();
-    if (text.length < 100) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('CV minimal 100 karakter sebelum dianalisis.')),
-      );
-      return;
-    }
+  /// Picks a PDF/TXT CV, extracts its text client-side (no upload), validates
+  /// ≥100 chars, then runs Claude analysis. The raw file/text is never stored.
+  Future<void> _pickAndAnalyze() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'txt'],
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty) return; // cancelled
+
+    final picked = result.files.single;
     setState(() => _isAnalyzing = true);
     try {
+      final bytes = picked.bytes ??
+          (picked.path != null ? await File(picked.path!).readAsBytes() : null);
+      if (bytes == null) {
+        throw 'Tidak bisa membaca isi file.';
+      }
+
+      final ext = (picked.extension ?? '').toLowerCase();
+      String text;
+      if (ext == 'pdf') {
+        final doc = PdfDocument(inputBytes: bytes);
+        text = PdfTextExtractor(doc).extractText();
+        doc.dispose();
+      } else {
+        text = utf8.decode(bytes, allowMalformed: true);
+      }
+      text = text.trim();
+
+      if (text.length < 100) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text(
+                    'Teks CV kurang dari 100 karakter. Jika ini PDF hasil scan/gambar, gunakan file PDF/TXT berbasis teks.')),
+          );
+        }
+        return;
+      }
+
+      _fileName = picked.name;
       final profile = await ClaudeService.instance.analyzeCv(text);
       if (!mounted) return;
       setState(() {
@@ -126,6 +162,43 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
     }
   }
 
+  Future<void> _delete() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Hapus Profil CV'),
+        content: const Text(
+            'Profil CV dan rekomendasi yang dihasilkan akan dihapus. Lanjutkan?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(dialogCtx, false),
+              child: const Text('Batal')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(dialogCtx, true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    try {
+      await _cvRepo.deleteProfile();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profil CV dihapus.')),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menghapus: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -134,31 +207,41 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('Tempel teks CV kamu',
+          Text('Unggah file CV kamu',
               style: theme.textTheme.titleMedium
                   ?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _cvCtrl,
-            maxLines: 8,
-            decoration: const InputDecoration(
-              hintText:
-                  'Tempel (paste) isi CV di sini (minimal 100 karakter)...',
-              border: OutlineInputBorder(),
-              alignLabelWithHint: true,
-            ),
-          ),
+          const SizedBox(height: 4),
+          Text('Format didukung: PDF atau TXT (berbasis teks, bukan hasil scan).',
+              style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey)),
           const SizedBox(height: 12),
+          if (_fileName != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                children: [
+                  const Icon(Icons.insert_drive_file_outlined, size: 18),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(_fileName!,
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ),
+                ],
+              ),
+            ),
           FilledButton.icon(
-            onPressed: _isAnalyzing ? null : _analyze,
+            onPressed: _isAnalyzing ? null : _pickAndAnalyze,
             icon: _isAnalyzing
                 ? const SizedBox(
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: Colors.white))
-                : const Icon(Icons.auto_awesome),
-            label: Text(_isAnalyzing ? 'Menganalisis...' : 'Analisis CV'),
+                : const Icon(Icons.upload_file),
+            label: Text(_isAnalyzing
+                ? 'Menganalisis...'
+                : (_fileName == null
+                    ? 'Pilih file CV (PDF/TXT)'
+                    : 'Pilih file CV lain')),
             style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
           ),
           if (_hasResult) ...[
@@ -231,6 +314,16 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
                   : const Text('Simpan Profil'),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: _isSaving ? null : _delete,
+              icon: const Icon(Icons.delete_outline),
+              label: const Text('Hapus Profil CV'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+                foregroundColor: Colors.red,
+              ),
             ),
           ],
         ],

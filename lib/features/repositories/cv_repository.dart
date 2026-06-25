@@ -34,4 +34,20 @@ class CvRepository {
         'items': recs.map((r) => r.toJson()).toList(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
+
+  /// Reads the saved recommendations (US09.7) for the dashboard (US15.3).
+  Future<List<JobRecommendation>> getRecommendations() async {
+    final snap = await _db.collection('recommendations').doc(_uid).get();
+    if (!snap.exists) return [];
+    final items = snap.data()?['items'] as List<dynamic>? ?? [];
+    return items
+        .map((e) => JobRecommendation.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Deletes the CV profile and its derived recommendations (US08 — DELETE).
+  Future<void> deleteProfile() async {
+    await _profileDoc.delete();
+    await _db.collection('recommendations').doc(_uid).delete();
+  }
 }

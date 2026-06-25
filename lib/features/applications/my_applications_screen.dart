@@ -18,6 +18,13 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
   String? _filter; // null = all
 
   @override
+  void initState() {
+    super.initState();
+    // US13.5 — create in-app reminders for applications stale >7 days.
+    _repo.remindStaleApplications();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Lamaran Saya')),

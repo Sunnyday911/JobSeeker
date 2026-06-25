@@ -1,7 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:jobseeker/features/admin/article_seeder.dart';
-import 'package:jobseeker/features/admin/manage_articles_screen.dart';
 import 'package:jobseeker/features/models/app_user.dart';
 import 'package:jobseeker/features/repositories/user_repository.dart';
 import 'package:jobseeker/features/profile/edit_profile_screen.dart';
@@ -9,8 +7,7 @@ import 'package:jobseeker/features/jobs_feed/saved_jobs_screen.dart';
 import 'package:jobseeker/features/applications/my_applications_screen.dart';
 import 'package:jobseeker/features/cv/recommendations_screen.dart';
 
-/// Account info, logout, and (for admins) content-management entry points
-/// plus the demo seeder (US07).
+/// Account info, logout, and quick links to the user's job-seeking features.
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -20,26 +17,6 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final _userRepo = UserRepository();
-  bool _seeding = false;
-
-  Future<void> _seed() async {
-    setState(() => _seeding = true);
-    try {
-      await ArticleSeeder.seed();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Artikel contoh ditambahkan.')),
-        );
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal menambahkan artikel contoh.')),
-        );
-      }
-    }
-    if (mounted) setState(() => _seeding = false);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -185,38 +162,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const Divider(height: 32),
-
-              // Admin-only content management (US07.1).
-              if (profile?.isAdmin ?? false) ...[
-                const Text('Admin',
-                    style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey)),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.article_outlined),
-                  title: const Text('Kelola Artikel'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => ManageArticlesScreen()),
-                  ),
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: _seeding
-                      ? const SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.auto_awesome_outlined),
-                  title: const Text('Seed Artikel Contoh (dev)'),
-                  onTap: _seeding ? null : _seed,
-                ),
-                const Divider(height: 32),
-              ],
 
               OutlinedButton.icon(
                 onPressed: () async {

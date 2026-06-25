@@ -27,11 +27,13 @@ class Application {
   final String dateOfBirth;
   final String address;
   final String phone;
+  final String platform; // where the application was sent (US12.2)
   final String status;
   final List<StatusChange> statusHistory;
   final String notes;
   final DateTime? appliedAt;
   final DateTime? updatedAt;
+  final DateTime? reminderSentAt; // last 7-day stale reminder sent (US13.5)
 
   const Application({
     required this.id,
@@ -45,9 +47,11 @@ class Application {
     required this.status,
     required this.statusHistory,
     this.jobId,
+    this.platform = '',
     this.notes = '',
     this.appliedAt,
     this.updatedAt,
+    this.reminderSentAt,
   });
 
   factory Application.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -62,6 +66,7 @@ class Application {
       dateOfBirth: (d['dateOfBirth'] ?? '').toString(),
       address: (d['address'] ?? '').toString(),
       phone: (d['phone'] ?? '').toString(),
+      platform: (d['platform'] ?? '').toString(),
       status: (d['status'] ?? 'Dikirim').toString(),
       statusHistory: (d['statusHistory'] as List<dynamic>? ?? [])
           .map((e) => StatusChange.fromMap(e as Map<String, dynamic>))
@@ -69,6 +74,7 @@ class Application {
       notes: (d['notes'] ?? '').toString(),
       appliedAt: (d['appliedAt'] as Timestamp?)?.toDate(),
       updatedAt: (d['updatedAt'] as Timestamp?)?.toDate(),
+      reminderSentAt: (d['reminderSentAt'] as Timestamp?)?.toDate(),
     );
   }
 
@@ -81,6 +87,7 @@ class Application {
         'dateOfBirth': dateOfBirth,
         'address': address,
         'phone': phone,
+        'platform': platform,
         'status': status,
         'statusHistory': statusHistory.map((s) => s.toMap()).toList(),
         'notes': notes,
@@ -88,5 +95,7 @@ class Application {
             appliedAt != null ? Timestamp.fromDate(appliedAt!) : Timestamp.now(),
         'updatedAt':
             updatedAt != null ? Timestamp.fromDate(updatedAt!) : Timestamp.now(),
+        if (reminderSentAt != null)
+          'reminderSentAt': Timestamp.fromDate(reminderSentAt!),
       };
 }

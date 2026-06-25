@@ -1,23 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:jobseeker/features/models/app_user.dart';
 import 'package:jobseeker/features/models/application.dart';
-import 'package:jobseeker/features/models/article.dart';
 import 'package:jobseeker/features/models/cv_profile.dart';
 import 'package:jobseeker/features/models/job.dart';
+import 'package:jobseeker/features/models/job_recommendation.dart';
 import 'package:jobseeker/features/repositories/application_repository.dart';
-import 'package:jobseeker/features/repositories/article_repository.dart';
 import 'package:jobseeker/features/repositories/cv_repository.dart';
 import 'package:jobseeker/features/repositories/user_repository.dart';
 import 'package:jobseeker/features/services/adzuna_service.dart';
-import 'package:jobseeker/features/articles/article_detail_screen.dart';
-import 'package:jobseeker/features/articles/articles_feed_screen.dart';
 import 'package:jobseeker/features/applications/my_applications_screen.dart';
 import 'package:jobseeker/features/cv/cv_analysis_screen.dart';
 import 'package:jobseeker/features/cv/recommendations_screen.dart';
 import 'package:jobseeker/features/jobs_feed/job_detail_screen.dart';
 
 /// Home dashboard (US15) — aggregates greeting, application stats, AI
-/// recommendation CTA, latest jobs, and featured articles into one hub.
+/// recommendation CTA + recommendations, and latest jobs into one hub.
 /// Body-only (uses MainScreen's AppBar). [onOpenJobsTab] switches the bottom
 /// nav to the Lowongan tab.
 class HomeDashboardScreen extends StatefulWidget {
@@ -32,16 +29,17 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   final _userRepo = UserRepository();
   final _appRepo = ApplicationRepository();
   final _cvRepo = CvRepository();
-  final _articleRepo = ArticleRepository();
 
   AppUser? _profile;
   Future<List<Job>>? _jobsFuture;
   Future<CvProfile?>? _cvFuture;
+  Future<List<JobRecommendation>>? _recsFuture;
 
   @override
   void initState() {
     super.initState();
     _cvFuture = _cvRepo.getProfile();
+    _recsFuture = _cvRepo.getRecommendations();
     _userRepo.getCurrentProfile().then((p) {
       if (!mounted) return;
       setState(() {
@@ -55,6 +53,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   Future<void> _refresh() async {
     setState(() {
       _cvFuture = _cvRepo.getProfile();
+      _recsFuture = _cvRepo.getRecommendations();
       _jobsFuture = AdzunaService.instance
           .searchJobs(what: _profile?.industry ?? '', resultsPerPage: 5);
     });
@@ -88,9 +87,8 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
           const SizedBox(height: 24),
           _recommendationCta(),
           const SizedBox(height: 24),
+          _recommendationsSection(),
           _latestJobsSection(),
-          const SizedBox(height: 24),
-          _featuredArticlesSection(),
         ],
       ),
     );
@@ -228,88 +226,61 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
     );
   }
 
-  // ---- Featured articles (US15.5) ----
-  Widget _featuredArticlesSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _sectionHeader(
-          'Artikel Panduan Karir',
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const ArticlesFeedScreen()),
-          ),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 150,
-          child: StreamBuilder<List<Article>>(
-            stream: _articleRepo.watchPublished(),
-            builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final articles = (snap.data ?? []).take(6).toList();
-              if (articles.isEmpty) {
-                return const Center(child: Text('Belum ada artikel.'));
-              }
-              return ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: articles.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 12),
-                itemBuilder: (context, i) {
-                  final a = articles[i];
-                  return SizedBox(
-                    width: 200,
-                    child: Card(
-                      clipBehavior: Clip.antiAlias,
-                      child: InkWell(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) =>
-                                  ArticleDetailScreen(articleId: a.id)),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (a.isFeatured)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                      color: Colors.orange.shade50,
-                                      borderRadius: BorderRadius.circular(20)),
-                                  child: Text('Unggulan',
-                                      style: TextStyle(
-                                          fontSize: 10,
-                                          color: Colors.orange.shade800,
-                                          fontWeight: FontWeight.bold)),
-                                ),
-                              const SizedBox(height: 8),
-                              Text(a.title,
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold)),
-                              const Spacer(),
-                              Text('${a.readTimeMinutes} min baca',
-                                  style: const TextStyle(
-                                      fontSize: 11, color: Colors.grey)),
-                            ],
-                          ),
-                        ),
-                      ),
+  // ---- AI recommendations from CV analysis (US15.3) ----
+  Widget _recommendationsSection() {
+    return FutureBuilder<List<JobRecommendation>>(
+      future: _recsFuture,
+      builder: (context, snap) {
+        final recs = (snap.data ?? [])
+            .where((r) => (r.jobTitle ?? '').isNotEmpty)
+            .take(3)
+            .toList();
+        if (recs.isEmpty) return const SizedBox.shrink();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _sectionHeader(
+              'Rekomendasi AI untukmu',
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const RecommendationsScreen()),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...recs.map((r) => Card(
+                  child: ListTile(
+                    title: Text(r.jobTitle!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(r.company ?? '',
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                    trailing: _matchBadge(r.matchScore),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const RecommendationsScreen()),
                     ),
-                  );
-                },
-              );
-            },
-          ),
-        ),
-      ],
+                  ),
+                )),
+            const SizedBox(height: 24),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _matchBadge(int score) {
+    final color =
+        score >= 75 ? Colors.green : (score >= 50 ? Colors.orange : Colors.red);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text('$score%',
+          style: TextStyle(color: color, fontWeight: FontWeight.bold)),
     );
   }
 

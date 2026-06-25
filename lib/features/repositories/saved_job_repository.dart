@@ -2,8 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:jobseeker/features/models/job.dart';
 
-/// Saved/favorite jobs under `users/{uid}/savedJobs/{jobId}` (US07),
-/// mirroring [BookmarkRepository] for articles.
+/// Saved/favorite jobs under `users/{uid}/savedJobs/{jobId}` (US07).
 class SavedJobRepository {
   final _db = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
@@ -32,6 +31,12 @@ class SavedJobRepository {
   }
 
   Future<void> remove(String jobId) => _col.doc(jobId).delete();
+
+  /// Updates the user's personal note on a saved job (US07 — UPDATE).
+  Future<void> updateNote(String jobId, String note) => _col.doc(jobId).update({
+        'note': note,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
 
   /// All saved jobs, newest-saved first (US07.4).
   Stream<List<Job>> watchSavedJobs() => _col
