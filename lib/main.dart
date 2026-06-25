@@ -22,11 +22,13 @@ GlobalKey<NavigatorState>();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-
-    options: DefaultFirebaseOptions.currentPlatform,
-
-  );
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    debugPrint('Firebase init failed: $e');
+  }
 
   FlutterError.onError = (errorDetails) {
     FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
@@ -36,10 +38,6 @@ Future<void> main() async {
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     return true;
   };
-
-  await NotificationService.instance.initialize(
-    navigatorKey,
-  );
 
   runApp(
     MultiProvider(
@@ -69,6 +67,14 @@ Future<void> main() async {
       child: const MyApp(),
     ),
   );
+
+  // Initialize FCM AFTER the first frame and without blocking it. On iOS,
+  // awaiting this before runApp() caused a permanent white screen (the iOS
+  // permission dialog + getToken() throwing without an APNs token). The call
+  // is self-guarded, so failures never take down the UI.
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    NotificationService.instance.initialize(navigatorKey);
+  });
 }
 
 class MyApp extends StatelessWidget {

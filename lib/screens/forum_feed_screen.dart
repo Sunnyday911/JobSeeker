@@ -15,6 +15,11 @@ class ForumFeedScreen extends StatefulWidget {
 class _ForumFeedScreenState extends State<ForumFeedScreen> {
   String _searchQuery = '';
   String _selectedCategory = 'All';
+  String _sortBy = 'Terbaru'; // Terbaru | Paling Dijawab | Trending
+  static const int _pageSize = 15;
+  int _visibleCount = _pageSize;
+  final _scrollController = ScrollController();
+
   final List<String> _categories = [
     'All',
     'Advice',
@@ -23,6 +28,43 @@ class _ForumFeedScreenState extends State<ForumFeedScreen> {
     'Tech',
     'Remote Work'
   ];
+  final List<String> _sortOptions = ['Terbaru', 'Paling Dijawab', 'Trending'];
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  // Infinite scroll: reveal another page when near the bottom (US16.6).
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      setState(() => _visibleCount += _pageSize);
+    }
+  }
+
+  List<Question> _sorted(List<Question> qs) {
+    final list = [...qs];
+    switch (_sortBy) {
+      case 'Paling Dijawab':
+        list.sort((a, b) => b.replyCount.compareTo(a.replyCount));
+        break;
+      case 'Trending':
+        int score(Question q) => q.upvotes * 2 + q.replyCount * 3;
+        list.sort((a, b) => score(b).compareTo(score(a)));
+        break;
+      default: // Terbaru
+        list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    }
+    return list;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +133,29 @@ class _ForumFeedScreenState extends State<ForumFeedScreen> {
               },
             ),
           ),
+          // Sort selector (US16.3)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Row(
+              children: [
+                Icon(Icons.sort, size: 18, color: theme.colorScheme.onSurfaceVariant),
+                const SizedBox(width: 8),
+                Text('Urutkan:', style: theme.textTheme.labelLarge),
+                const SizedBox(width: 8),
+                DropdownButton<String>(
+                  value: _sortBy,
+                  underline: const SizedBox.shrink(),
+                  items: _sortOptions
+                      .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                      .toList(),
+                  onChanged: (v) => setState(() {
+                    _sortBy = v ?? 'Terbaru';
+                    _visibleCount = _pageSize;
+                  }),
+                ),
+              ],
+            ),
+          ),
           const Divider(height: 1),
 
           // Feed
@@ -120,13 +185,25 @@ class _ForumFeedScreenState extends State<ForumFeedScreen> {
                   return const _EmptyState();
                 }
 
+                // Sort (US16.3) then page client-side 15-at-a-time (US16.6).
+                final sorted = _sorted(filteredQuestions);
+                final visible = sorted.take(_visibleCount).toList();
+                final hasMore = _visibleCount < sorted.length;
+
                 return RefreshIndicator(
                   onRefresh: () async => provider.loadQuestions(),
                   child: ListView.builder(
+                    controller: _scrollController,
                     padding: const EdgeInsets.only(top: 8, bottom: 80),
-                    itemCount: filteredQuestions.length,
+                    itemCount: visible.length + (hasMore ? 1 : 0),
                     itemBuilder: (context, index) {
-                      final question = filteredQuestions[index];
+                      if (index >= visible.length) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                      final question = visible[index];
                       return QuestionCard(
                         question: question,
                         onTap: () {

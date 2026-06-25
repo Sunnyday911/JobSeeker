@@ -13,7 +13,7 @@ class ForumRepository {
   Stream<List<Question>> getQuestions() {
     return _questionsCollection
         .orderBy('createdAt', descending: true)
-        .limit(20)
+        .limit(100)
         .snapshots()
         .map(
           (snapshot) => snapshot.docs

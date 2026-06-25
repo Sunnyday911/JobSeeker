@@ -48,6 +48,7 @@ class ApplicationRepository {
     required String dateOfBirth,
     required String address,
     required String phone,
+    required String platform,
     required String notes,
   }) =>
       _col.doc(id).update({
@@ -55,6 +56,7 @@ class ApplicationRepository {
         'dateOfBirth': dateOfBirth,
         'address': address,
         'phone': phone,
+        'platform': platform,
         'notes': notes,
         'updatedAt': Timestamp.now(),
       });
@@ -69,4 +71,39 @@ class ApplicationRepository {
       });
 
   Future<void> deleteApplication(String id) => _col.doc(id).delete();
+
+  /// Client-side 7-day reminder (US13.5): for each active application not
+  /// updated in >7 days, create an in-app notification once per stale window.
+  /// Runs without Cloud Functions (Spark) — call it when the tracker opens.
+  Future<void> remindStaleApplications() async {
+    final snap = await _col.where('userId', isEqualTo: _uid).get();
+    final now = DateTime.now();
+    final cutoff = now.subtract(const Duration(days: 7));
+    final notifCol =
+        _db.collection('users').doc(_uid).collection('notifications');
+
+    for (final doc in snap.docs) {
+      final app = Application.fromFirestore(doc);
+      final isActive =
+          app.status != 'Ditolak' && app.status != 'Tawaran Diterima';
+      final lastUpdate = app.updatedAt ?? app.appliedAt;
+      if (!isActive || lastUpdate == null || lastUpdate.isAfter(cutoff)) {
+        continue;
+      }
+      // Skip if we already reminded since the last update (avoid duplicates).
+      if (app.reminderSentAt != null &&
+          app.reminderSentAt!.isAfter(lastUpdate)) {
+        continue;
+      }
+      await notifCol.add({
+        'title': 'Pengingat lamaran',
+        'body':
+            'Lamaran "${app.jobTitle}" di ${app.company} belum diperbarui lebih dari 7 hari.',
+        'createdAt': Timestamp.now(),
+        'read': false,
+        'route': null,
+      });
+      await doc.reference.update({'reminderSentAt': Timestamp.fromDate(now)});
+    }
+  }
 }

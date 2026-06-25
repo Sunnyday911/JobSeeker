@@ -4,7 +4,6 @@ import 'package:jobseeker/core/constants.dart';
 import 'package:jobseeker/features/models/application.dart';
 import 'package:jobseeker/features/repositories/application_repository.dart';
 import 'package:jobseeker/features/applications/apply_form_screen.dart';
-import 'package:jobseeker/features/articles/articles_feed_screen.dart';
 
 /// Application detail (US13): status dropdown + history + notes, plus edit and
 /// delete. Streams the single doc so status changes reflect live.
@@ -67,26 +66,11 @@ class ApplicationDetailScreen extends StatelessWidget {
         ),
         const SizedBox(height: 16),
 
-        // Contextual link into Articles: prep content when at Interview stage.
-        if (app.status == 'Interview') ...[
-          OutlinedButton.icon(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) =>
-                    const ArticlesFeedScreen(initialCategory: 'Interview Prep'),
-              ),
-            ),
-            icon: const Icon(Icons.menu_book_outlined),
-            label: const Text('Persiapan Interview'),
-          ),
-          const SizedBox(height: 16),
-        ],
-
         _infoTile('Nama', app.fullName),
         _infoTile('Tanggal Lahir', app.dateOfBirth),
         _infoTile('Alamat', app.address),
         _infoTile('Telepon', app.phone),
+        if (app.platform.isNotEmpty) _infoTile('Platform', app.platform),
         if (app.appliedAt != null)
           _infoTile('Tanggal Melamar',
               DateFormat('d MMM yyyy').format(app.appliedAt!)),
