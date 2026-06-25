@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:jobseeker/features/services/adzuna_service.dart'; // Pastikan path import ini sesuai
 
 class AddJobScreen extends StatefulWidget {
   const AddJobScreen({super.key});
@@ -17,10 +18,37 @@ class _AddJobScreenState extends State<AddJobScreen> {
   final TextEditingController _posterController = TextEditingController();
   final TextEditingController _salaryController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
-  final TextEditingController _categoryController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
+  // Variabel untuk menampung data kategori dari Adzuna
+  List<({String tag, String label})> _categories = [];
+  String? _selectedCategory;
+  bool _isLoadingCategories = true;
   bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+  }
+
+
+  Future<void> _loadCategories() async {
+    try {
+      final cats = await AdzunaService.instance.fetchCategories();
+      if (mounted) {
+        setState(() {
+          _categories = cats;
+          _isLoadingCategories = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Gagal memuat kategori dari Adzuna: $e');
+      if (mounted) {
+        setState(() => _isLoadingCategories = false);
+      }
+    }
+  }
 
   // Fungsi untuk menyimpan data ke Firebase Firestore
   Future<void> _submitJob() async {
@@ -34,16 +62,16 @@ class _AddJobScreenState extends State<AddJobScreen> {
           'poster_name': _posterController.text.trim(),
           'salary': _salaryController.text.trim(),
           'location': _locationController.text.trim(),
-          'category': _categoryController.text.trim(),
+          'category': _selectedCategory,
           'description': _descriptionController.text.trim(),
-          'created_at': FieldValue.serverTimestamp(), // Catat waktu posting
+          'created_at': FieldValue.serverTimestamp(),
         });
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Job berhasil ditambahkan!')),
           );
-          Navigator.pop(context); // Kembali ke halaman sebelumnya setelah sukses
+          Navigator.pop(context);
         }
       } catch (e) {
         if (mounted) {
@@ -64,7 +92,6 @@ class _AddJobScreenState extends State<AddJobScreen> {
     _posterController.dispose();
     _salaryController.dispose();
     _locationController.dispose();
-    _categoryController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
@@ -128,22 +155,45 @@ class _AddJobScreenState extends State<AddJobScreen> {
                 validator: (value) => value!.isEmpty ? 'Wajib diisi' : null,
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _categoryController,
+
+              // DROPDOWN UNTUK KATEGORI ADZUNA
+              _isLoadingCategories
+                  ? const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+                  : DropdownButtonFormField<String>(
+                value: _selectedCategory,
+                isExpanded: true,
                 decoration: const InputDecoration(
-                  labelText: 'Kategori (Contoh: IT, Keuangan)',
+                  labelText: 'Kategori Lowongan',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => value!.isEmpty ? 'Wajib diisi' : null,
+                items: _categories.map((c) {
+                  return DropdownMenuItem<String>(
+                    value: c.tag, // Nilai asli (misal: 'it-jobs') yang akan disimpan ke Firestore
+                    child: Text(c.label), // Teks rapi yang dilihat user (misal: 'IT Jobs')
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedCategory = value;
+                  });
+                },
+                validator: (value) => value == null ? 'Wajib memilih kategori' : null,
               ),
               const SizedBox(height: 16),
+
               TextFormField(
                 controller: _descriptionController,
+                maxLines: 4,
                 decoration: const InputDecoration(
-                  labelText: 'Deskripsi',
-                  border: OutlineInputBorder()
+                    labelText: 'Deskripsi',
+                    border: OutlineInputBorder()
                 ),
-                validator: (value) => value!.isEmpty ? 'wajib diisi' : null,
+                validator: (value) => value!.isEmpty ? 'Wajib diisi' : null,
               ),
               const SizedBox(height: 24),
               SizedBox(
