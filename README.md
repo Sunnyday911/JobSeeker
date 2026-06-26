@@ -171,5 +171,5 @@ operations (with their Firestore collections and repository methods), the **exte
 | Member | Firestore collections | External APIs | Other cloud services |
 |---|---|---|---|
 | **Muiz Surya Fata** | `users`, `savedJobs`, `cvProfiles`, `recommendations` | Adzuna, Anthropic Claude | Firebase Auth |
-| **Sanie Ghanda Prawira** | `applications`, `jobs` (+ writes `notifications`) | Adzuna (dashboard) | — |
+| **Sanie Ghanda Prawira** | `applications`, `jobs` (+ writes `notifications`) | Adzuna (dashboard) | Firebase Auth |
 | **Alfa Radithya Fanany** | `questions` + `replies`, `notifications` | — | FCM, local notifications, Crashlytics, Analytics |
