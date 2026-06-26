@@ -174,7 +174,10 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
                   style: const TextStyle(fontWeight: FontWeight.bold)),
               subtitle: Text(app.company),
               trailing: Chip(
-                label: Text(app.status, style: const TextStyle(fontSize: 11)),
+                label: Text(app.status,
+                    style: const TextStyle(
+                        fontSize: 11, color: Colors.white)),
+                backgroundColor: applicationStatusColor(app.status),
                 visualDensity: VisualDensity.compact,
               ),
               onTap: () => Navigator.push(

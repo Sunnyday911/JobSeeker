@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:jobseeker/core/constants.dart';
@@ -47,23 +48,47 @@ class ApplicationDetailScreen extends StatelessWidget {
             style: theme.textTheme.titleLarge
                 ?.copyWith(fontWeight: FontWeight.bold)),
         Text(app.company, style: TextStyle(color: theme.colorScheme.primary)),
+        const SizedBox(height: 8),
+        // Current status badge, color-coded (Change Plan 2.0, Part 9).
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Chip(
+            label: Text(app.status,
+                style: const TextStyle(color: Colors.white, fontSize: 12)),
+            backgroundColor: applicationStatusColor(app.status),
+            visualDensity: VisualDensity.compact,
+          ),
+        ),
         const SizedBox(height: 16),
 
-        // Status dropdown (US13.1/13.2)
+        // Accepted → celebratory "next steps" card with company + HR name.
+        if (app.status == 'Tawaran Diterima') _acceptedCard(context, app),
+        // Company's accept/reject message, when present.
+        if ((app.decisionNote ?? '').isNotEmpty) _decisionNoteCard(context, app),
+
+        // Status — editable ONLY for self-tracked external applications. For a
+        // company-posted job (has a company owner) the status is controlled by
+        // the company, so the seeker sees it read-only.
         Text('Status', style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          initialValue:
-              kApplicationStatuses.contains(app.status) ? app.status : null,
-          isExpanded: true,
-          decoration: const InputDecoration(border: OutlineInputBorder()),
-          items: kApplicationStatuses
-              .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-              .toList(),
-          onChanged: (v) {
-            if (v != null && v != app.status) repo.updateStatus(app.id, v);
-          },
-        ),
+        if (app.jobOwnerId == null)
+          DropdownButtonFormField<String>(
+            initialValue:
+                kApplicationStatuses.contains(app.status) ? app.status : null,
+            isExpanded: true,
+            decoration: const InputDecoration(border: OutlineInputBorder()),
+            items: kApplicationStatuses
+                .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                .toList(),
+            onChanged: (v) {
+              if (v != null && v != app.status) repo.updateStatus(app.id, v);
+            },
+          )
+        else
+          const Text(
+            'Status lamaran ini diatur oleh perusahaan.',
+            style: TextStyle(color: Colors.grey),
+          ),
         const SizedBox(height: 16),
 
         _infoTile('Nama', app.fullName),
@@ -139,6 +164,96 @@ class ApplicationDetailScreen extends StatelessWidget {
             child: const Text('Hapus', style: TextStyle(color: Colors.red)),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Celebratory "what next" card for an accepted application. Fetches the job's
+  /// HR/recruiter name (`poster_name`) from `jobs/{jobId}`; falls back to the
+  /// company name only if the job is missing/deleted or has no jobId.
+  Widget _acceptedCard(BuildContext context, Application app) {
+    final jobId = app.jobId;
+    return Card(
+      color: Colors.green.shade50,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.celebration_outlined, color: Colors.green),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text('Selamat! Lamaran Anda diterima',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green.shade800)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Text('Perusahaan akan menghubungi Anda untuk langkah '
+                'selanjutnya. Kontak:'),
+            const SizedBox(height: 8),
+            _contactRow(Icons.business_outlined, 'Perusahaan', app.company),
+            if (jobId != null && jobId.isNotEmpty)
+              FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                future: FirebaseFirestore.instance
+                    .collection('jobs')
+                    .doc(jobId)
+                    .get(),
+                builder: (context, snap) {
+                  final poster =
+                      (snap.data?.data()?['poster_name'] ?? '').toString();
+                  if (poster.isEmpty) return const SizedBox.shrink();
+                  return _contactRow(
+                      Icons.person_outline, 'Narahubung (HR)', poster);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _contactRow(IconData icon, String label, String value) => Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 18, color: Colors.green),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text.rich(TextSpan(children: [
+                TextSpan(
+                    text: '$label: ',
+                    style: const TextStyle(color: Colors.grey)),
+                TextSpan(
+                    text: value,
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
+              ])),
+            ),
+          ],
+        ),
+      );
+
+  /// The company's accept/reject message to the applicant, when present.
+  Widget _decisionNoteCard(BuildContext context, Application app) {
+    final accepted = app.status == 'Tawaran Diterima';
+    return Card(
+      color: accepted ? Colors.green.shade50 : Colors.red.shade50,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Pesan dari perusahaan',
+                style: TextStyle(fontSize: 12, color: Colors.grey)),
+            const SizedBox(height: 4),
+            Text(app.decisionNote ?? ''),
+          ],
+        ),
       ),
     );
   }

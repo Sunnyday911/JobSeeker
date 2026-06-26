@@ -12,6 +12,8 @@ import 'package:jobseeker/screens/register_screen.dart';
 import 'package:jobseeker/screens/forum_feed_screen.dart';
 import 'package:jobseeker/screens/post_question_screen.dart';
 import 'package:jobseeker/screens/notifications_screen.dart';
+import 'package:jobseeker/features/applications/my_applications_screen.dart';
+import 'package:jobseeker/features/jobs/my_jobs_screen.dart';
 import 'package:jobseeker/core/auth_gate.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
@@ -102,6 +104,9 @@ class MyApp extends StatelessWidget {
         'post_question': (context) => const PostQuestionScreen(),
         'notifications': (context) => const NotificationsScreen(),
         'forum': (context) => const ForumFeedScreen(),
+        // Applicant-lifecycle notification targets (Change Plan 2.0, Part 8).
+        'my_applications': (context) => const MyApplicationsScreen(),
+        'my_jobs': (context) => const MyJobsScreen(),
       },
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:jobseeker/features/services/adzuna_service.dart'; // Pastikan path import ini sesuai
 
 class AddJobScreen extends StatefulWidget {
@@ -65,6 +66,7 @@ class _AddJobScreenState extends State<AddJobScreen> {
           'category': _selectedCategory,
           'description': _descriptionController.text.trim(),
           'created_at': FieldValue.serverTimestamp(),
+          'createdBy': FirebaseAuth.instance.currentUser?.uid,
         });
 
         if (mounted) {

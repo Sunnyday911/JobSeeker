@@ -11,6 +11,9 @@ class AppUser {
   final String? experienceLevel;
   final String? city;
   final bool onboardingCompleted;
+  // Company-specific onboarding flag (separate from the seeker `onboardingCompleted`)
+  // so existing companies are routed through the company form exactly once.
+  final bool companyOnboarded;
 
   AppUser({
     required this.uid,
@@ -23,6 +26,7 @@ class AppUser {
     this.industry,
     this.experienceLevel,
     this.city,
+    this.companyOnboarded = false,
   });
 
   bool get isAdmin => role == 'admin';
@@ -46,6 +50,7 @@ class AppUser {
     city: data['city'],
     onboardingCompleted:
     data['onboardingCompleted'] ?? false,
+    companyOnboarded: data['companyOnboarded'] ?? false,
     );
 
   }

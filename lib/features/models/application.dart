@@ -21,6 +21,7 @@ class Application {
   final String id;
   final String userId;
   final String? jobId;
+  final String? jobOwnerId; // company uid that owns the job (Change Plan 2.0); null for Adzuna
   final String jobTitle;
   final String company;
   final String fullName;
@@ -34,6 +35,7 @@ class Application {
   final DateTime? appliedAt;
   final DateTime? updatedAt;
   final DateTime? reminderSentAt; // last 7-day stale reminder sent (US13.5)
+  final String? decisionNote; // company's accept/reject message to the applicant
 
   const Application({
     required this.id,
@@ -47,11 +49,13 @@ class Application {
     required this.status,
     required this.statusHistory,
     this.jobId,
+    this.jobOwnerId,
     this.platform = '',
     this.notes = '',
     this.appliedAt,
     this.updatedAt,
     this.reminderSentAt,
+    this.decisionNote,
   });
 
   factory Application.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -60,6 +64,7 @@ class Application {
       id: doc.id,
       userId: (d['userId'] ?? '').toString(),
       jobId: d['jobId']?.toString(),
+      jobOwnerId: d['jobOwnerId']?.toString(),
       jobTitle: (d['jobTitle'] ?? '').toString(),
       company: (d['company'] ?? '').toString(),
       fullName: (d['fullName'] ?? '').toString(),
@@ -75,6 +80,7 @@ class Application {
       appliedAt: (d['appliedAt'] as Timestamp?)?.toDate(),
       updatedAt: (d['updatedAt'] as Timestamp?)?.toDate(),
       reminderSentAt: (d['reminderSentAt'] as Timestamp?)?.toDate(),
+      decisionNote: d['decisionNote']?.toString(),
     );
   }
 
@@ -97,5 +103,7 @@ class Application {
             updatedAt != null ? Timestamp.fromDate(updatedAt!) : Timestamp.now(),
         if (reminderSentAt != null)
           'reminderSentAt': Timestamp.fromDate(reminderSentAt!),
+        if (jobOwnerId != null) 'jobOwnerId': jobOwnerId,
+        if (decisionNote != null) 'decisionNote': decisionNote,
       };
 }

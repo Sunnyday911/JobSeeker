@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:jobseeker/features/home/main_screen.dart';
 import 'package:jobseeker/features/models/app_user.dart';
+import 'package:jobseeker/features/onboarding/company_onboarding_screen.dart';
 import 'package:jobseeker/features/onboarding/onboarding_screen.dart';
 import 'package:jobseeker/features/repositories/user_repository.dart';
 import 'package:jobseeker/screens/login_screen.dart';
@@ -37,6 +38,16 @@ class AuthGate extends StatelessWidget {
             final profile = profileSnap.data;
             // Profile briefly missing right after sign-in: show a spinner.
             if (profile == null) return const _Loading();
+            // Companies use a dedicated onboarding keyed on `companyOnboarded`
+            // (catches both new and already-registered companies once).
+            if (profile.isCompany) {
+              if (!profile.companyOnboarded) {
+                return const CompanyOnboardingScreen();
+              }
+              return const MainScreen();
+            }
+            // Everyone else (seeker / admin / any legacy role) keeps the
+            // ORIGINAL gate, so existing seeker behavior is unchanged.
             if (!profile.onboardingCompleted) {
               return const OnboardingScreen();
             }

@@ -54,7 +54,12 @@ class _JobsFeedScreenState extends State<JobsFeedScreen> {
     _loadCategories();
     UserRepository().getCurrentProfile().then((p) {
       if (!mounted) return;
-      setState(() => _profile = p);
+      setState(() {
+        _profile = p;
+        // Company accounts default to the "Perusahaan" segment (Change Plan
+        // 2.0, Part 7.4); the Adzuna seeker feed stays available but secondary.
+        if (p?.role == 'company') _source = 'company';
+      });
       // Personalize the feed from the profile (Onboarding → Jobs) when the user
       // hasn't searched yet. Industry seeds the Adzuna keyword; city is not used
       // here because Adzuna has no Indonesia index (an Indonesian city query
@@ -140,30 +145,34 @@ class _JobsFeedScreenState extends State<JobsFeedScreen> {
       appBar: AppBar(
         title: const Text('Lowongan Kerja'),
         actions: [
-          IconButton(
-            tooltip: 'Rekomendasi AI',
-            icon: const Icon(Icons.auto_awesome),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const RecommendationsScreen()),
+          // Seeker-only shortcuts — hidden for company accounts (Change Plan 2.0).
+          if (!_isCompany) ...[
+            IconButton(
+              tooltip: 'Rekomendasi AI',
+              icon: const Icon(Icons.auto_awesome),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const RecommendationsScreen()),
+              ),
             ),
-          ),
-          IconButton(
-            tooltip: 'Lamaran Saya',
-            icon: const Icon(Icons.assignment_outlined),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const MyApplicationsScreen()),
+            IconButton(
+              tooltip: 'Lamaran Saya',
+              icon: const Icon(Icons.assignment_outlined),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MyApplicationsScreen()),
+              ),
             ),
-          ),
-          IconButton(
-            tooltip: 'Tersimpan',
-            icon: const Icon(Icons.bookmark),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SavedJobsScreen()),
+            IconButton(
+              tooltip: 'Tersimpan',
+              icon: const Icon(Icons.bookmark),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SavedJobsScreen()),
+              ),
             ),
-          ),
+          ],
         ],
       ),
       floatingActionButton: (_source == 'company' && _isCompany)

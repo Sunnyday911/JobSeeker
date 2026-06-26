@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:jobseeker/features/models/app_user.dart';
 import 'package:jobseeker/features/models/job.dart';
 import 'package:jobseeker/features/repositories/saved_job_repository.dart';
+import 'package:jobseeker/features/repositories/user_repository.dart';
 import 'package:jobseeker/features/applications/apply_form_screen.dart';
 
 /// Full Adzuna job detail (US06): info, save toggle (US07), and an external
@@ -30,6 +32,17 @@ class JobDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Role-aware (Change Plan 2.0, Part 7.2): companies don't apply/save jobs.
+    return FutureBuilder<AppUser?>(
+      future: UserRepository().getCurrentProfile(),
+      builder: (context, snap) {
+        final isCompany = snap.data?.isCompany ?? false;
+        return _content(context, isCompany);
+      },
+    );
+  }
+
+  Widget _content(BuildContext context, bool isCompany) {
     final theme = Theme.of(context);
     final savedRepo = SavedJobRepository();
 
@@ -37,28 +50,29 @@ class JobDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Detail Lowongan'),
         actions: [
-          StreamBuilder<bool>(
-            stream: savedRepo.watchIsSaved(job.id),
-            builder: (context, snap) {
-              final saved = snap.data ?? false;
-              return IconButton(
-                tooltip: saved ? 'Hapus dari tersimpan' : 'Simpan Lowongan',
-                icon: Icon(saved ? Icons.bookmark : Icons.bookmark_border),
-                onPressed: () async {
-                  await savedRepo.toggle(job);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(saved
-                            ? 'Lowongan dihapus dari tersimpan'
-                            : 'Lowongan disimpan'),
-                      ),
-                    );
-                  }
-                },
-              );
-            },
-          ),
+          if (!isCompany)
+            StreamBuilder<bool>(
+              stream: savedRepo.watchIsSaved(job.id),
+              builder: (context, snap) {
+                final saved = snap.data ?? false;
+                return IconButton(
+                  tooltip: saved ? 'Hapus dari tersimpan' : 'Simpan Lowongan',
+                  icon: Icon(saved ? Icons.bookmark : Icons.bookmark_border),
+                  onPressed: () async {
+                    await savedRepo.toggle(job);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(saved
+                              ? 'Lowongan dihapus dari tersimpan'
+                              : 'Lowongan disimpan'),
+                        ),
+                      );
+                    }
+                  },
+                );
+              },
+            ),
         ],
       ),
       body: ListView(
@@ -89,23 +103,34 @@ class JobDetailScreen extends StatelessWidget {
             style: const TextStyle(height: 1.5),
           ),
           const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: () => _openOriginal(context),
-            icon: const Icon(Icons.open_in_new),
-            label: const Text('Lamar Sekarang'),
-            style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50)),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => ApplyFormScreen(job: job)),
+          if (isCompany)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'Akun perusahaan tidak melamar lowongan.',
+                style: TextStyle(color: Colors.grey),
+              ),
+            )
+          else ...[
+            FilledButton.icon(
+              onPressed: () => _openOriginal(context),
+              icon: const Icon(Icons.open_in_new),
+              label: const Text('Lamar Sekarang'),
+              style:
+                  FilledButton.styleFrom(minimumSize: const Size.fromHeight(50)),
             ),
-            icon: const Icon(Icons.assignment_outlined),
-            label: const Text('Catat Lamaran'),
-            style:
-                OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(50)),
-          ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => ApplyFormScreen(job: job)),
+              ),
+              icon: const Icon(Icons.assignment_outlined),
+              label: const Text('Catat Lamaran'),
+              style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(50)),
+            ),
+          ],
         ],
       ),
     );

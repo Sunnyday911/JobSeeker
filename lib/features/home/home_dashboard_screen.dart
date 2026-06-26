@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:jobseeker/features/models/app_user.dart';
 import 'package:jobseeker/features/models/application.dart';
@@ -11,6 +13,7 @@ import 'package:jobseeker/features/services/adzuna_service.dart';
 import 'package:jobseeker/features/applications/my_applications_screen.dart';
 import 'package:jobseeker/features/cv/cv_analysis_screen.dart';
 import 'package:jobseeker/features/cv/recommendations_screen.dart';
+import 'package:jobseeker/features/jobs/my_jobs_screen.dart';
 import 'package:jobseeker/features/jobs_feed/job_detail_screen.dart';
 
 /// Home dashboard (US15) — aggregates greeting, application stats, AI
@@ -38,24 +41,31 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _cvFuture = _cvRepo.getProfile();
-    _recsFuture = _cvRepo.getRecommendations();
+    // Load the profile FIRST, then only fire the seeker-only fetches (Adzuna
+    // API + cvProfiles/recommendations reads) for seekers (Change Plan 2.0,
+    // Part 7.1). A company never triggers these, protecting Adzuna quota.
     _userRepo.getCurrentProfile().then((p) {
       if (!mounted) return;
       setState(() {
         _profile = p;
-        _jobsFuture = AdzunaService.instance
-            .searchJobs(what: p?.industry ?? '', resultsPerPage: 5);
+        if (p?.isSeeker ?? false) {
+          _cvFuture = _cvRepo.getProfile();
+          _recsFuture = _cvRepo.getRecommendations();
+          _jobsFuture = AdzunaService.instance
+              .searchJobs(what: p?.industry ?? '', resultsPerPage: 5);
+        }
       });
     });
   }
 
   Future<void> _refresh() async {
+    final p = _profile;
+    if (!(p?.isSeeker ?? false)) return; // companies have nothing to refresh here
     setState(() {
       _cvFuture = _cvRepo.getProfile();
       _recsFuture = _cvRepo.getRecommendations();
       _jobsFuture = AdzunaService.instance
-          .searchJobs(what: _profile?.industry ?? '', resultsPerPage: 5);
+          .searchJobs(what: p?.industry ?? '', resultsPerPage: 5);
     });
   }
 
@@ -83,15 +93,63 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          _statsSection(),
-          const SizedBox(height: 24),
-          _recommendationCta(),
-          const SizedBox(height: 24),
-          _recommendationsSection(),
-          _latestJobsSection(),
+          if (_profile?.isCompany ?? false)
+            ..._companySection()
+          else ...[
+            _statsSection(),
+            const SizedBox(height: 24),
+            _recommendationCta(),
+            const SizedBox(height: 24),
+            _recommendationsSection(),
+            _latestJobsSection(),
+          ],
         ],
       ),
     );
+  }
+
+  // ---- Company home variant (Change Plan 2.0, Part 7.1) ----
+  List<Widget> _companySection() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final jobsStream = FirebaseFirestore.instance
+        .collection('jobs')
+        .where('createdBy', isEqualTo: uid)
+        .snapshots();
+    return [
+      Row(
+        children: [
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: jobsStream,
+              builder: (context, snap) =>
+                  _plainStatCard('Lowongan', snap.data?.docs.length ?? 0),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: StreamBuilder<List<Application>>(
+              stream: _appRepo.watchApplicantsForMyJobs(),
+              builder: (context, snap) =>
+                  _plainStatCard('Pelamar', snap.data?.length ?? 0),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 24),
+      Card(
+        color: Theme.of(context).colorScheme.primaryContainer,
+        child: ListTile(
+          leading: const Icon(Icons.work_outline),
+          title: const Text('Kelola Lowongan'),
+          subtitle: const Text('Lihat lowongan dan pelamar perusahaan Anda'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const MyJobsScreen()),
+          ),
+        ),
+      ),
+    ];
   }
 
   // ---- Application stats (US15.2) ----
@@ -127,17 +185,19 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   }
 
   Widget _statCard(String label, int value) => Expanded(
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            child: Column(
-              children: [
-                Text('$value',
-                    style: const TextStyle(
-                        fontSize: 22, fontWeight: FontWeight.bold)),
-                Text(label, style: const TextStyle(fontSize: 12)),
-              ],
-            ),
+        child: _plainStatCard(label, value),
+      );
+
+  Widget _plainStatCard(String label, int value) => Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          child: Column(
+            children: [
+              Text('$value',
+                  style: const TextStyle(
+                      fontSize: 22, fontWeight: FontWeight.bold)),
+              Text(label, style: const TextStyle(fontSize: 12)),
+            ],
           ),
         ),
       );

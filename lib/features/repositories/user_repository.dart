@@ -61,10 +61,30 @@ class UserRepository {
     });
   }
 
+  /// Saves the minimal company onboarding and marks the company onboarded.
+  /// Also sets `onboardingCompleted: true` so any code reading that flag stays
+  /// valid for companies.
+  Future<void> completeCompanyOnboarding({
+    required String companyName,
+    required String city,
+    required String industry,
+  }) async {
+    final uid = _auth.currentUser!.uid;
+    await _doc(uid).update({
+      'fullName': companyName,
+      'city': city,
+      'industry': industry,
+      'companyOnboarded': true,
+      'onboardingCompleted': true,
+    });
+  }
+
   Future updateProfile({
     required String fullName,
     required String phoneNumber,
     required String bio,
+    String? city,
+    String? industry,
   }) async {
     final uid = _auth.currentUser!.uid;
 
@@ -72,6 +92,10 @@ class UserRepository {
       'fullName': fullName,
       'phoneNumber': phoneNumber,
       'bio': bio,
+      // Optional company fields — only written when provided, so the seeker
+      // call path (fullName/phoneNumber/bio) is unchanged.
+      if (city != null) 'city': city,
+      if (industry != null) 'industry': industry,
     });
   }
 

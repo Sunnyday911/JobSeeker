@@ -8,12 +8,28 @@ import 'package:jobseeker/features/jobs/jobs_details.dart';
 /// the detail screen.
 class CompanyJobsView extends StatelessWidget {
   final bool isCompany;
-  const CompanyJobsView({super.key, required this.isCompany});
+
+  /// Optional override stream (Change Plan 2.0, Part 4). Defaults to the full
+  /// `jobs` collection so the "Perusahaan" segment is unchanged; the my-jobs
+  /// screen passes a `where('createdBy', isEqualTo: uid)` query.
+  final Query<Map<String, dynamic>>? query;
+
+  /// Message shown when the (possibly filtered) list is empty.
+  final String emptyMessage;
+
+  const CompanyJobsView({
+    super.key,
+    required this.isCompany,
+    this.query,
+    this.emptyMessage = 'Belum ada lowongan perusahaan.',
+  });
 
   @override
   Widget build(BuildContext context) {
+    final stream =
+        (query ?? FirebaseFirestore.instance.collection('jobs')).snapshots();
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('jobs').snapshots(),
+      stream: stream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -23,7 +39,7 @@ class CompanyJobsView extends StatelessWidget {
         }
         final jobs = snapshot.data?.docs ?? [];
         if (jobs.isEmpty) {
-          return const Center(child: Text('Belum ada lowongan perusahaan.'));
+          return Center(child: Text(emptyMessage));
         }
         return ListView.builder(
           padding: const EdgeInsets.all(16.0),

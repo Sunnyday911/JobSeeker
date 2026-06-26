@@ -6,6 +6,7 @@ import 'package:jobseeker/features/profile/edit_profile_screen.dart';
 import 'package:jobseeker/features/jobs_feed/saved_jobs_screen.dart';
 import 'package:jobseeker/features/applications/my_applications_screen.dart';
 import 'package:jobseeker/features/cv/recommendations_screen.dart';
+import 'package:jobseeker/features/jobs/my_jobs_screen.dart';
 
 /// Account info, logout, and quick links to the user's job-seeking features.
 class ProfileScreen extends StatefulWidget {
@@ -123,44 +124,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   profile?.experienceLevel ?? '-'),
               const Divider(height: 32),
 
-              // Activity hub — quick links to the user's job-seeking features.
-              const Text('Aktivitas',
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey)),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.auto_awesome_outlined),
-                title: const Text('Analisis CV & Rekomendasi'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const RecommendationsScreen()),
+              // Activity hub — role-aware (Change Plan 2.0, Part 4).
+              if (profile?.isCompany ?? false) ...[
+                const Text('Kelola',
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey)),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.work_outline),
+                  title: const Text('Lowongan Saya'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const MyJobsScreen()),
+                  ),
                 ),
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.bookmark_outline),
-                title: const Text('Lowongan Tersimpan'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SavedJobsScreen()),
+              ] else ...[
+                const Text('Aktivitas',
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey)),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.auto_awesome_outlined),
+                  title: const Text('Analisis CV & Rekomendasi'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const RecommendationsScreen()),
+                  ),
                 ),
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.assignment_outlined),
-                title: const Text('Lamaran Saya'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const MyApplicationsScreen()),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.bookmark_outline),
+                  title: const Text('Lowongan Tersimpan'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SavedJobsScreen()),
+                  ),
                 ),
-              ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.assignment_outlined),
+                  title: const Text('Lamaran Saya'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const MyApplicationsScreen()),
+                  ),
+                ),
+              ],
               const Divider(height: 32),
 
               OutlinedButton.icon(

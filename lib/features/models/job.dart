@@ -18,6 +18,7 @@ class Job {
   final String? contractTime; // full_time / part_time
   final String? contractType; // permanent / contract
   final String? note; // user's personal note on a saved job (US07 UPDATE)
+  final String? ownerId; // company `createdBy` uid (Change Plan 2.0); null for Adzuna
 
   const Job({
     required this.id,
@@ -33,6 +34,7 @@ class Job {
     this.contractTime,
     this.contractType,
     this.note,
+    this.ownerId,
   });
 
   factory Job.fromAdzuna(Map<String, dynamic> j) {
@@ -103,6 +105,7 @@ class Job {
       salaryMin: salaryNum,
       category: m['category']?.toString(),
       created: (m['created_at'] as Timestamp?)?.toDate(),
+      ownerId: m['createdBy']?.toString(),
     );
   }
 

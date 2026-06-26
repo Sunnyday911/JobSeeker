@@ -104,6 +104,7 @@ class _ApplyFormScreenState extends State<ApplyFormScreen> {
           id: '',
           userId: FirebaseAuth.instance.currentUser!.uid,
           jobId: widget.job?.id,
+          jobOwnerId: widget.job?.ownerId,
           jobTitle: _jobTitle,
           company: _company,
           fullName: _nameCtrl.text.trim(),
