@@ -6,7 +6,7 @@ the applications they've sent, and discuss in a community forum. **Companies** g
 a dedicated onboarding, their own posted jobs, and an applicant pipeline where they accept/reject
 applicants — each of whom is notified.
 
-> **Roles (Change Plan 2.0).** Every account is a `seeker`, a `company`, or `admin`. Companies and
+> Every account is a `seeker`, a `company`, or `admin`. Companies and
 > seekers are fully separated: companies go through a **minimal company onboarding** (not the seeker
 > career questionnaire), see a **company home + "Lowongan Saya"** instead of the seeker hub, **cannot
 > apply** to jobs, and **manage applicants** to the jobs they own. See `CHANGE_PLAN_2.0.md` (Parts 1–9)
