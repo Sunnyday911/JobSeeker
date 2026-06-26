@@ -46,7 +46,7 @@ operations (with their Firestore collections and repository methods), the **exte
 
 ---
 
-## 👤 Muiz Surya Fata — Authentication, Job Listings & AI CV Analyzer
+## Muiz Surya Fata — Authentication, Job Listings & AI CV Analyzer
 
 **Features built**
 - Email/password **registration, login, and onboarding** (industry, city, experience level) — shared
@@ -87,7 +87,7 @@ operations (with their Firestore collections and repository methods), the **exte
 
 ---
 
-## 👤 Sanie Ghanda Prawira — Application Tracker, Company Job Board & Home Dashboard
+## Sanie Ghanda Prawira — Application Tracker, Company Job Board & Home Dashboard
 
 **Features built**
 - **Application tracker**: record applications (name, DOB, address, phone, **platform** such as
@@ -132,7 +132,7 @@ operations (with their Firestore collections and repository methods), the **exte
 
 ---
 
-## 👤 Alfa Radithya Fanany — Community Forum, Notification Center & Push Notifications
+## Alfa Radithya Fanany — Community Forum, Notification Center & Push Notifications
 
 **Features built**
 - **Community forum**: questions feed with **category filter**, **sort** (Newest / Most Answered /
